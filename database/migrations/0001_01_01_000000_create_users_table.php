@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // Adding role column to separate Administrator and Researcher
+            $table->string('role')->default('researcher');
             $table->rememberToken();
             $table->timestamps();
         });
