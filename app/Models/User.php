@@ -29,4 +29,16 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-}
+// Relationship: A user can have many uploaded papers (One-to-Many)
+    public function papers()
+    {
+        return $this->hasMany(Paper::class);
+    }
+
+    // Relationship: A user can create many collections (One-to-Many)
+    public function collections()
+    {
+        return $this->hasMany(Collection::class);
+    }
+    }
+
