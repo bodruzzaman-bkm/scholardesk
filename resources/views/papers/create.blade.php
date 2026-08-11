@@ -16,8 +16,8 @@
 
                         <!-- Title -->
                         <div>
-                            <x-input-label for="title" :value="__('Paper Title')" />
-                            <x-text-input id="title" class="block mt-1 w-full" type="text" name="title" :value="old('title')" required autofocus />
+                            <x-input-label for="title" :value="__('Paper Title (Optional if DOI/URL is provided)')" />
+                            <x-text-input id="title" class="block mt-1 w-full" type="text" name="title" :value="old('title')" placeholder="Enter title or leave blank to auto-fetch via DOI" autofocus />
                             <x-input-error :messages="$errors->get('title')" class="mt-2" />
                         </div>
 

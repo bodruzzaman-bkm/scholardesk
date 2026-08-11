@@ -12,17 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('papers', function (Blueprint $table) {
-            //
+            $table->string('authors')->nullable()->after('title');
+            $table->string('year')->nullable()->after('authors');
+            $table->string('venue')->nullable()->after('year');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('papers', function (Blueprint $table) {
-            //
+            $table->dropColumn(['authors', 'year', 'venue']);
         });
     }
 };

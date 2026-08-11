@@ -9,6 +9,9 @@ class Paper extends Model
     // Allowing these columns to be saved in the database
     protected $fillable = [
         'title',
+        'authors', 
+        'year',    
+        'venue',   
         'abstract',
         'doi',
         'file_path',
