@@ -42,11 +42,17 @@
                                                 {{ $paper->reading_status }}
                                             </span>
                                         </td>
-                                        <td class="py-3 px-4 text-right space-x-2">
-                                            <button class="text-sm text-indigo-600 hover:underline">View</button>
-                                            <button class="text-sm text-green-600 hover:underline">Edit</button>
-                                            <button class="text-sm text-red-600 hover:underline">Delete</button>
-                                        </td>
+                                        <td class="py-3 px-4 text-right flex justify-end space-x-3">
+                                        <!-- View & Edit buttons (Not active yet) -->
+                                        <a href="#" class="text-sm text-indigo-600 hover:underline">View</a>
+                                        <a href="{{ route('papers.edit', $paper->id) }}" class="text-sm text-green-600 hover:underline">Edit</a>
+                                        <!-- Delete Form -->
+                                        <form action="{{ route('papers.destroy', $paper->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this paper?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-sm text-red-600 hover:underline">Delete</button>
+                                        </form>
+                                    </td>
                                     </tr>
                                 @endforeach
                             </tbody>

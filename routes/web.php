@@ -19,10 +19,13 @@ Route::middleware('auth')->group(function () {
     // Routes for Paper Management
     Route::get('/papers/create', [PaperController::class, 'create'])->name('papers.create');
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
-    // Routes for Paper Management
     Route::get('/papers', [PaperController::class, 'index'])->name('papers.index'); 
     Route::get('/papers/create', [PaperController::class, 'create'])->name('papers.create');
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
+    Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
+    Route::delete('/papers/{paper}', [PaperController::class, 'destroy'])->name('papers.destroy');
+    Route::get('/papers/{paper}/edit', [PaperController::class, 'edit'])->name('papers.edit'); 
+    Route::put('/papers/{paper}', [PaperController::class, 'update'])->name('papers.update'); 
 });
 
 require __DIR__.'/auth.php';

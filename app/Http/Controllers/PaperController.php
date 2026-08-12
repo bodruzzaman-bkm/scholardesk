@@ -6,6 +6,7 @@ use App\Models\Paper;
 use App\Services\CrossRefService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PaperController extends Controller
 {   
@@ -63,5 +64,64 @@ class PaperController extends Controller
         ]);
 
         return redirect()->route('dashboard')->with('success', 'Paper added successfully with metadata!');
+    }
+    // Method to delete a paper
+    public function destroy(Paper $paper)
+    {
+        // 1. Security Check: Ensure the user owns the paper
+        if ($paper->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // 2. Delete the physical PDF file from storage
+        if ($paper->file_path) {
+            Storage::disk('public')->delete($paper->file_path);
+        }
+
+        // 3. Delete the record from the database
+        $paper->delete();
+
+        // 4. Redirect back with success message
+        return redirect()->route('papers.index')->with('success', 'Paper deleted successfully!');
+    }
+
+    // Method to show the edit form for a specific paper
+    public function edit(Paper $paper)
+    {
+        // Security Check: Ensure the user owns the paper
+        if ($paper->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        return view('papers.edit', compact('paper'));
+    }
+
+    // Method to update the paper's details and reading status
+    public function update(Request $request, Paper $paper)
+    {
+        // Security Check: Ensure the user owns the paper
+        if ($paper->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Validate the incoming data
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'authors' => 'nullable|string',
+            'year' => 'nullable|string',
+            'venue' => 'nullable|string',
+            'reading_status' => 'required|in:to read,reading,read',
+        ]);
+
+        // Update the paper in the database
+        $paper->update([
+            'title' => $request->title,
+            'authors' => $request->authors,
+            'year' => $request->year,
+            'venue' => $request->venue,
+            'reading_status' => $request->reading_status,
+        ]);
+
+        return redirect()->route('papers.index')->with('success', 'Paper updated successfully!');
     }
 }
