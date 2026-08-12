@@ -19,6 +19,10 @@ Route::middleware('auth')->group(function () {
     // Routes for Paper Management
     Route::get('/papers/create', [PaperController::class, 'create'])->name('papers.create');
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
+    // Routes for Paper Management
+    Route::get('/papers', [PaperController::class, 'index'])->name('papers.index'); 
+    Route::get('/papers/create', [PaperController::class, 'create'])->name('papers.create');
+    Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
 });
 
 require __DIR__.'/auth.php';

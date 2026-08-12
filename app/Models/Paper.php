@@ -15,6 +15,7 @@ class Paper extends Model
         'abstract',
         'doi',
         'file_path',
+        'reading_status',
         'user_id',
     ];
 

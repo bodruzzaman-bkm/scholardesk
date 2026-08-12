@@ -8,7 +8,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PaperController extends Controller
-{
+{   
+    // Method to display a list of all papers uploaded by the authenticated user
+    public function index()
+    {
+        // Fetch papers belonging to the logged-in user, ordered by newest first
+        $papers = Paper::where('user_id', Auth::id())->latest()->get();
+
+        // Pass the fetched papers to the view
+        return view('papers.index', compact('papers'));
+    }
+
+
+
     // Method to show the paper upload form
     public function create()
     {
