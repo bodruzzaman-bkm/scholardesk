@@ -20,6 +20,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/papers/create', [PaperController::class, 'create'])->name('papers.create');
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
     Route::get('/papers', [PaperController::class, 'index'])->name('papers.index'); 
+    Route::get('/papers/{paper}', [PaperController::class, 'show'])->name('papers.show');
     Route::get('/papers/create', [PaperController::class, 'create'])->name('papers.create');
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');

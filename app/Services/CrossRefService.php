@@ -17,7 +17,7 @@ class CrossRefService
         if ($response->successful()) {
             $data = $response->json()['message'];
             
-            // Format authors array into a comma-separated string
+            // 1. Format authors array into a comma-separated string
             $authors = null;
             if (isset($data['author'])) {
                 $authorsList = array_map(function($author) {
@@ -26,13 +26,20 @@ class CrossRefService
                 $authors = implode(', ', $authorsList);
             }
 
-            // Return the metadata as an array to the controller
+            // 2. Clean up the abstract text (remove tags and leading 'Abstract' word)
+            $abstractText = null;
+            if (isset($data['abstract'])) {
+                $abstractText = strip_tags($data['abstract']);
+                $abstractText = preg_replace('/^Abstract\s*/i', '', $abstractText);
+            }
+
+            // 3. Return the metadata as an array to the controller
             return [
-                'title' => $data['title'][0] ?? null,
-                'abstract' => $data['abstract'] ?? null,
+                'title' => isset($data['title'][0]) ? strip_tags($data['title'][0]) : null,
+                'abstract' => $abstractText,
                 'venue' => $data['container-title'][0] ?? null,
                 'year' => $data['published-print']['date-parts'][0][0] ?? null,
-                'authors' => $authors,
+                'authors' => $authors, // Now $authors is perfectly defined!
             ];
         }
 

@@ -38,13 +38,24 @@
                                         </td>
                                         <td class="py-3 px-4">{{ $paper->year ?? 'N/A' }}</td>
                                         <td class="py-3 px-4">
-                                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
-                                                {{ $paper->reading_status }}
-                                            </span>
+                                            @if($paper->reading_status === 'to read')
+                                                <span class="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 capitalize whitespace-nowrap">
+                                                    To Read
+                                                </span>
+                                            @elseif($paper->reading_status === 'reading')
+                                                <span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize whitespace-nowrap">
+                                                    Reading
+                                                </span>
+                                            @elseif($paper->reading_status === 'read')
+                                                <span class="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800 capitalize whitespace-nowrap">
+                                                    Read
+                                                </span>
+                                            @endif
                                         </td>
+
                                         <td class="py-3 px-4 text-right flex justify-end space-x-3">
-                                        <!-- View & Edit buttons (Not active yet) -->
-                                        <a href="#" class="text-sm text-indigo-600 hover:underline">View</a>
+                                        <!-- View & Edit buttons-->
+                                        <a href="{{ route('papers.show', $paper->id) }}" class="text-sm text-indigo-600 hover:underline">View</a>
                                         <a href="{{ route('papers.edit', $paper->id) }}" class="text-sm text-green-600 hover:underline">Edit</a>
                                         <!-- Delete Form -->
                                         <form action="{{ route('papers.destroy', $paper->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this paper?');">

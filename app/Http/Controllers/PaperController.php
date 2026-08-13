@@ -10,6 +10,17 @@ use Illuminate\Support\Facades\Storage;
 
 class PaperController extends Controller
 {   
+    // Method to display a single paper's details
+    public function show(Paper $paper)
+    {
+        // Security Check: Ensure the user owns the paper
+        if ($paper->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        return view('papers.show', compact('paper'));
+    }
+    
     // Method to display a list of all papers uploaded by the authenticated user
     public function index()
     {
