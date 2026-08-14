@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaperController;
+use App\Http\Controllers\CollectionController;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -27,6 +29,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/papers/{paper}', [PaperController::class, 'destroy'])->name('papers.destroy');
     Route::get('/papers/{paper}/edit', [PaperController::class, 'edit'])->name('papers.edit'); 
     Route::put('/papers/{paper}', [PaperController::class, 'update'])->name('papers.update'); 
+    Route::get('/collections', [CollectionController::class, 'index'])->name('collections.index');
+    Route::post('/collections', [CollectionController::class, 'store'])->name('collections.store');
+    Route::get('/collections/{collection}', [CollectionController::class, 'show'])->name('collections.show');
+    Route::delete('/collections/{collection}/papers/{paper}', [CollectionController::class, 'removePaper'])->name('collections.papers.remove');
 });
 
 require __DIR__.'/auth.php';

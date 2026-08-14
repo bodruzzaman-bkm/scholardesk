@@ -24,4 +24,5 @@ class Collection extends Model
     {
         return $this->belongsToMany(Paper::class);
     }
+    
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Collection;
 use App\Models\Paper;
 use App\Services\CrossRefService;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class PaperController extends Controller
 
         return view('papers.show', compact('paper'));
     }
-    
+
     // Method to display a list of all papers uploaded by the authenticated user
     public function index()
     {
@@ -99,12 +100,14 @@ class PaperController extends Controller
     // Method to show the edit form for a specific paper
     public function edit(Paper $paper)
     {
-        // Security Check: Ensure the user owns the paper
         if ($paper->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
         
-        return view('papers.edit', compact('paper'));
+        // Fetch user's collections to display as checkboxes
+        $collections = Collection::where('user_id', Auth::id())->get();
+        
+        return view('papers.edit', compact('paper', 'collections'));
     }
 
     // Method to update the paper's details and reading status
@@ -124,7 +127,7 @@ class PaperController extends Controller
             'reading_status' => 'required|in:to read,reading,read',
         ]);
 
-        // Update the paper in the database
+        // ... (existing update logic) ...
         $paper->update([
             'title' => $request->title,
             'authors' => $request->authors,
@@ -132,6 +135,14 @@ class PaperController extends Controller
             'venue' => $request->venue,
             'reading_status' => $request->reading_status,
         ]);
+
+        // Sync collections: attach selected, detach unselected
+        if ($request->has('collections')) {
+            $paper->collections()->sync($request->collections);
+        } else {
+            // If no checkboxes are selected, remove from all collections
+            $paper->collections()->sync([]); 
+        }
 
         return redirect()->route('papers.index')->with('success', 'Paper updated successfully!');
     }

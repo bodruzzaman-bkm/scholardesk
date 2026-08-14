@@ -30,4 +30,6 @@ class Paper extends Model
     {
         return $this->belongsToMany(Collection::class);
     }
+
+    
 }
