@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Paper;
+use App\Models\user;
 
 class Collection extends Model
 {

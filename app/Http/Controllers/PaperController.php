@@ -99,10 +99,12 @@ class PaperController extends Controller
 
     // Method to show the edit form for a specific paper
     public function edit(Paper $paper)
+    
     {
         if ($paper->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
+        $collections= Collection::where('user_id',Auth::id())->get();
         
         // Fetch user's collections to display as checkboxes
         $collections = Collection::where('user_id', Auth::id())->get();
