@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Collection;
 
 class Paper extends Model
 {
@@ -25,6 +26,11 @@ class Paper extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    
     // Relationship: A paper can belong to multiple collections (Many-to-Many)
     public function collections()
     {

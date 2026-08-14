@@ -44,6 +44,36 @@
                                 <x-input-error :messages="$errors->get('venue')" class="mt-2" />
                             </div>
                         </div>
+<div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+        Add to Collections
+    </h3>
+
+    @if($collections->isEmpty())
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            You haven't created any collections yet.
+        </p>
+    @else
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+            @foreach($collections as $collection)
+                <label class="inline-flex items-center">
+                    <input
+                        type="checkbox"
+                        name="collections[]"
+                        value="{{ $collection->id }}"
+                        class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                        {{ $paper->collections->contains($collection->id) ? 'checked' : '' }}
+                    >
+
+                    <span class="ml-2 text-gray-700 dark:text-gray-300">
+                        {{ $collection->name }}
+                    </span>
+                </label>
+            @endforeach
+        </div>
+        @endif
+    </div>
+
 
                         <!-- Reading Status -->
                         <div class="mt-4">

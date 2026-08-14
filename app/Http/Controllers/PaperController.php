@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Paper;
+use App\Models\Collection;
 use App\Services\CrossRefService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -98,13 +99,15 @@ class PaperController extends Controller
 
     // Method to show the edit form for a specific paper
     public function edit(Paper $paper)
+    
     {
         // Security Check: Ensure the user owns the paper
         if ($paper->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
+        $collections= Collection::where('user_id',Auth::id())->get();
         
-        return view('papers.edit', compact('paper'));
+        return view('papers.edit', compact('paper', 'collections'));
     }
 
     // Method to update the paper's details and reading status
@@ -132,6 +135,8 @@ class PaperController extends Controller
             'venue' => $request->venue,
             'reading_status' => $request->reading_status,
         ]);
+
+        $paper->collection()->sync($request->input('collections',[]));
 
         return redirect()->route('papers.index')->with('success', 'Paper updated successfully!');
     }
