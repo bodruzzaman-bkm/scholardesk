@@ -62,8 +62,8 @@
                 <div class="flex space-x-4 mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
                     @if($paper->file_path)
                         <!-- Link to view the PDF file stored in public storage -->
-                        <a href="{{ asset('storage/' . $paper->file_path) }}" target="_blank" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
-                            Read PDF Document
+                        <a href="{{ route('papers.read', $paper->id) }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                            Read PDF in Browser
                         </a>
                     @else
                         <button disabled class="px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed">

@@ -170,4 +170,19 @@ class PaperController extends Controller
 
         return redirect()->route('papers.index')->with('success', 'Paper updated successfully!');
     }
+    // Method to open the PDF reader interface
+    public function read(Paper $paper)
+    {
+        // Security Check
+        if ($paper->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Ensure PDF exists
+        if (!$paper->file_path) {
+            return redirect()->back()->with('error', 'No PDF file uploaded for this paper.');
+        }
+
+        return view('papers.read', compact('paper'));
+    }
 }

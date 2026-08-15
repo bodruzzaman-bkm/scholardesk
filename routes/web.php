@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaperController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\HighlightController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -23,6 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
     Route::get('/papers', [PaperController::class, 'index'])->name('papers.index'); 
     Route::get('/papers/{paper}', [PaperController::class, 'show'])->name('papers.show');
+    Route::get('/papers/{paper}/read', [PaperController::class, 'read'])->name('papers.read');
     Route::get('/papers/create', [PaperController::class, 'create'])->name('papers.create');
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
@@ -36,6 +38,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/collections/{collection}/papers/{paper}', [CollectionController::class, 'removePaper'])->name('collections.papers.remove');
     // Routes for Tag Management
     Route::post('/tags', [TagController::class, 'store'])->name('tags.store');
+    // Routes for PDF Highlights & Notes (API format for JS)
+    Route::get('/papers/{paper}/highlights', [HighlightController::class, 'index'])->name('highlights.index');
+    Route::post('/papers/{paper}/highlights', [HighlightController::class, 'store'])->name('highlights.store');
+    Route::delete('/highlights/{highlight}', [HighlightController::class, 'destroy'])->name('highlights.destroy');
 });
 
 require __DIR__.'/auth.php';

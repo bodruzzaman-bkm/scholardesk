@@ -37,4 +37,10 @@ class Paper extends Model
     {
         return $this->belongsToMany(Tag::class);
     }
+
+    // Relationship: A paper can have many highlights
+    public function highlights()
+    {
+        return $this->hasMany(Highlight::class);
+    }
 }
