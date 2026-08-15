@@ -4,7 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaperController;
 use App\Http\Controllers\CollectionController;
-
+use App\Http\Controllers\TagController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -28,11 +28,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/papers', [PaperController::class, 'store'])->name('papers.store');
     Route::delete('/papers/{paper}', [PaperController::class, 'destroy'])->name('papers.destroy');
     Route::get('/papers/{paper}/edit', [PaperController::class, 'edit'])->name('papers.edit'); 
-    Route::put('/papers/{paper}', [PaperController::class, 'update'])->name('papers.update'); 
+    Route::put('/papers/{paper}', [PaperController::class, 'update'])->name('papers.update');
+    // Routes for Collection Management
     Route::get('/collections', [CollectionController::class, 'index'])->name('collections.index');
     Route::post('/collections', [CollectionController::class, 'store'])->name('collections.store');
     Route::get('/collections/{collection}', [CollectionController::class, 'show'])->name('collections.show');
     Route::delete('/collections/{collection}/papers/{paper}', [CollectionController::class, 'removePaper'])->name('collections.papers.remove');
+    // Routes for Tag Management
+    Route::post('/tags', [TagController::class, 'store'])->name('tags.store');
 });
 
 require __DIR__.'/auth.php';

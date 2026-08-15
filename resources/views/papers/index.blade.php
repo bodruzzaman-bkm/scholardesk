@@ -4,9 +4,23 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('My Library') }}
             </h2>
-            <a href="{{ route('papers.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
-                + Add Paper
-            </a>
+            <div class="flex space-x-4 items-center">
+                <!-- Tag Filter Form -->
+                <form method="GET" action="{{ route('papers.index') }}" class="flex items-center space-x-2">
+                    <select name="tag" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm" onchange="this.form.submit()">
+                        <option value="">All Tags</option>
+                        @foreach($tags as $tag)
+                            <option value="{{ $tag->id }}" {{ request('tag') == $tag->id ? 'selected' : '' }}>
+                                {{ $tag->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
+
+                <a href="{{ route('papers.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                    + Add Paper
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -17,7 +31,11 @@
                     
                     @if($papers->isEmpty())
                         <div class="text-center py-8">
-                            <p class="text-gray-500 dark:text-gray-400">Your library is empty. Start by adding some papers!</p>
+                            @if(request('tag'))
+                                <p class="text-gray-500 dark:text-gray-400">No papers match this tag.</p>
+                            @else
+                                <p class="text-gray-500 dark:text-gray-400">Your library is empty. Start by adding some papers!</p>
+                            @endif
                         </div>
                     @else
                         <table class="w-full text-left border-collapse">
@@ -35,6 +53,14 @@
                                         <td class="py-3 px-4">
                                             <div class="font-semibold">{{ $paper->title }}</div>
                                             <div class="text-sm text-gray-500">{{ $paper->authors ?? 'Unknown Author' }}</div>
+                                            <!-- Colored Tags -->
+                                            <div class="mt-1 flex flex-wrap gap-1">
+                                                @foreach($paper->tags as $tag)
+                                                    <span class="px-2 py-0.5 text-[10px] font-medium text-white rounded-full" style="background-color: {{ $tag->color }}">
+                                                        {{ $tag->name }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
                                         </td>
                                         <td class="py-3 px-4">{{ $paper->year ?? 'N/A' }}</td>
                                         <td class="py-3 px-4">

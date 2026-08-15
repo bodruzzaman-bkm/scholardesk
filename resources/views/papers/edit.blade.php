@@ -95,10 +95,32 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                                     @foreach($collections as $collection)
                                         <label class="inline-flex items-center">
-                                            <input type="checkbox" name="collections[]" value="{{ $collection->id }}" 
+                                            <input type="checkbox" name="collections[]" value="{{ $collection->id }}"
                                                 class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500"
                                                 {{ $paper->collections->contains($collection->id) ? 'checked' : '' }}>
                                             <span class="ml-2 text-gray-700 dark:text-gray-300">{{ $collection->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Apply Tags -->
+                        <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Apply Tags</h3>
+
+                            @if($tags->isEmpty())
+                                <p class="text-sm text-gray-500 dark:text-gray-400">You haven't created any tags yet.</p>
+                            @else
+                                @php($selectedTags = old('tags', $paper->tags->pluck('id')->toArray()))
+                                <div class="flex flex-wrap gap-3 mt-2">
+                                    @foreach($tags as $tag)
+                                        <label class="inline-flex items-center border border-gray-200 dark:border-gray-600 px-3 py-1 rounded-full cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                            <input type="checkbox" name="tags[]" value="{{ $tag->id }}"
+                                                class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                                                {{ in_array($tag->id, $selectedTags) ? 'checked' : '' }}>
+                                            <span class="ml-2 w-3 h-3 rounded-full inline-block" style="background-color: {{ $tag->color }};"></span>
+                                            <span class="ml-1 text-sm text-gray-700 dark:text-gray-300">{{ $tag->name }}</span>
                                         </label>
                                     @endforeach
                                 </div>
@@ -113,7 +135,23 @@
                             </x-primary-button>
                         </div>
                     </form>
-                    
+
+                    <!-- Create a New Tag (kept outside the paper form, HTML forbids nested forms) -->
+                    <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Create a New Tag</h3>
+                        <form method="POST" action="{{ route('tags.store') }}" class="flex items-center space-x-4">
+                            @csrf
+                            <div>
+                                <x-text-input id="name" class="block w-full text-sm" type="text" name="name" placeholder="Tag Name" required />
+                                <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                            </div>
+                            <div>
+                                <input type="color" name="color" value="#4F46E5" class="h-10 w-10 border-0 rounded cursor-pointer" required />
+                            </div>
+                            <x-primary-button type="submit">{{ __('Add Tag') }}</x-primary-button>
+                        </form>
+                    </div>
+
                 </div>
             </div>
         </div>

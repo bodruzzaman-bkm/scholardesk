@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Collection;
 use App\Models\Paper;
+use App\Models\Tag;
 use App\Services\CrossRefService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,13 +24,23 @@ class PaperController extends Controller
     }
 
     // Method to display a list of all papers uploaded by the authenticated user
-    public function index()
+    public function index(Request $request)
     {
         // Fetch papers belonging to the logged-in user, ordered by newest first
-        $papers = Paper::where('user_id', Auth::id())->latest()->get();
+        $query = Paper::with('tags')->where('user_id', Auth::id())->latest();
 
-        // Pass the fetched papers to the view
-        return view('papers.index', compact('papers'));
+        // Apply Tag Filter if requested
+        if ($request->filled('tag')) {
+            $query->whereHas('tags', function ($q) use ($request) {
+                $q->where('tags.id', $request->tag);
+            });
+        }
+
+        $papers = $query->get();
+        $tags = Tag::where('user_id', Auth::id())->get(); // Fetch tags for the dropdown
+
+        // Pass the fetched papers and tags to the view
+        return view('papers.index', compact('papers', 'tags'));
     }
 
 
@@ -104,12 +115,14 @@ class PaperController extends Controller
         if ($paper->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
-        $collections= Collection::where('user_id',Auth::id())->get();
-        
+
         // Fetch user's collections to display as checkboxes
         $collections = Collection::where('user_id', Auth::id())->get();
-        
-        return view('papers.edit', compact('paper', 'collections'));
+
+        // Fetch user's tags to display as checkboxes
+        $tags = Tag::where('user_id', Auth::id())->get();
+
+        return view('papers.edit', compact('paper', 'collections', 'tags'));
     }
 
     // Method to update the paper's details and reading status
@@ -127,6 +140,8 @@ class PaperController extends Controller
             'year' => 'nullable|string',
             'venue' => 'nullable|string',
             'reading_status' => 'required|in:to read,reading,read',
+            'tags' => 'nullable|array',
+            'tags.*' => 'integer',
         ]);
 
         // ... (existing update logic) ...
@@ -143,8 +158,15 @@ class PaperController extends Controller
             $paper->collections()->sync($request->collections);
         } else {
             // If no checkboxes are selected, remove from all collections
-            $paper->collections()->sync([]); 
+            $paper->collections()->sync([]);
         }
+
+        // Sync tags, keeping only the tags that actually belong to this user
+        $tagIds = Tag::where('user_id', Auth::id())
+            ->whereIn('id', $request->input('tags', []))
+            ->pluck('id');
+
+        $paper->tags()->sync($tagIds);
 
         return redirect()->route('papers.index')->with('success', 'Paper updated successfully!');
     }

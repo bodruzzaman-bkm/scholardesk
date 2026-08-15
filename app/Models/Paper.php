@@ -32,5 +32,9 @@ class Paper extends Model
         return $this->belongsToMany(Collection::class);
     }
 
-    
+    // Relationship: A paper can have many tags (Many-to-Many)
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class);
+    }
 }
