@@ -79,17 +79,25 @@
                                             @endif
                                         </td>
 
-                                        <td class="py-3 px-4 text-right flex justify-end space-x-3">
-                                        <!-- View & Edit buttons-->
-                                        <a href="{{ route('papers.show', $paper->id) }}" class="text-sm text-indigo-600 hover:underline">View</a>
-                                        <a href="{{ route('papers.edit', $paper->id) }}" class="text-sm text-green-600 hover:underline">Edit</a>
-                                        <!-- Delete Form -->
-                                        <form action="{{ route('papers.destroy', $paper->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this paper?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-sm text-red-600 hover:underline">Delete</button>
-                                        </form>
-                                    </td>
+                                        
+                                        <td class="py-3 px-4 align-middle">
+                                            <div class="flex justify-center items-center space-x-4 text-sm font-medium">
+                                                
+                                                <!-- View Link -->
+                                                <a href="{{ route('papers.show', $paper->id) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition">View</a>
+                                                
+                                                <!-- Edit Link -->
+                                                <a href="{{ route('papers.edit', $paper->id) }}" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 transition">Edit</a>
+                                                
+                                                <!-- Delete Form -->
+                                                <form action="{{ route('papers.destroy', $paper->id) }}" method="POST" class="inline-block m-0 p-0" onsubmit="return confirm('Are you sure you want to delete this paper?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition bg-transparent border-0 p-0 cursor-pointer">Delete</button>
+                                                </form>
+                                                
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>

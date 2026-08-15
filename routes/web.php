@@ -6,14 +6,15 @@ use App\Http\Controllers\PaperController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\HighlightController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -42,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/papers/{paper}/highlights', [HighlightController::class, 'index'])->name('highlights.index');
     Route::post('/papers/{paper}/highlights', [HighlightController::class, 'store'])->name('highlights.store');
     Route::delete('/highlights/{highlight}', [HighlightController::class, 'destroy'])->name('highlights.destroy');
+    
 });
 
 require __DIR__.'/auth.php';
