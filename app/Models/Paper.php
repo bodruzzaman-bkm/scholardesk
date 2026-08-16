@@ -43,4 +43,9 @@ class Paper extends Model
     {
         return $this->hasMany(Highlight::class);
     }
-}
+    // Relationship: A paper can have many notes
+    public function notes()
+    {
+        return $this->hasMany(Note::class)->latest();
+    }
+    }

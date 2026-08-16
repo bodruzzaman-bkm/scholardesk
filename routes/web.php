@@ -7,6 +7,8 @@ use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\HighlightController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NoteController;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -43,7 +45,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/papers/{paper}/highlights', [HighlightController::class, 'index'])->name('highlights.index');
     Route::post('/papers/{paper}/highlights', [HighlightController::class, 'store'])->name('highlights.store');
     Route::delete('/highlights/{highlight}', [HighlightController::class, 'destroy'])->name('highlights.destroy');
-    
+    // Markdown Notes Routes
+    Route::post('/papers/{paper}/notes', [NoteController::class, 'store'])->name('notes.store');
+    Route::get('/notes/{note}/edit', [NoteController::class, 'edit'])->name('notes.edit');
+    Route::put('/notes/{note}', [NoteController::class, 'update'])->name('notes.update');
+    Route::delete('/notes/{note}', [NoteController::class, 'destroy'])->name('notes.destroy');
+
+
 });
 
 require __DIR__.'/auth.php';

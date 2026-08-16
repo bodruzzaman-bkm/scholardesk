@@ -77,6 +77,112 @@
                 </div>
 
             </div>
+            <div
+  class="mt-8 bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6 border-t-4 border-indigo-500"
+>
+<h3
+    class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center"
+>
+    <svg
+        class="w-6 h-6 mr-2"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+    >
+        <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+        ></path>
+    </svg>
+
+    Research Notes
+</h3>
+<!-- List Existing Notes -->
+<div class="space-y-6 mb-8">
+    @forelse($paper->notes as $note)
+
+    <div
+        class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-5 border border-gray-200 dark:border-gray-600 relative group"
+    >
+
+        <!-- Note Actions (Edit/Delete) -->
+        <div
+            class="absolute top-4 right-4 flex space-x-3 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+            <a
+                href="{{ route('notes.edit', $note->id) }}"
+                class="text-sm text-blue-600 hover:text-blue-800"
+            >
+                Edit
+            </a>
+
+            <form
+                action="{{ route('notes.destroy', $note->id) }}"
+                method="POST"
+                onsubmit="return confirm('Delete this note?');"
+                class="inline"
+            >
+                @csrf
+                @method('DELETE')
+
+                <button
+                    type="submit"
+                    class="text-sm text-red-600 hover:text-red-800"
+                >
+                    Delete
+                </button>
+            </form>
+        </div>
+
+        <!-- Render Markdown -->
+        <div class="prose prose-indigo dark:prose-invert max-w-none">
+            {!! Str::markdown($note->content, ['html_input' => 'strip']) !!}
+        </div>
+
+        <p class="text-xs text-gray-400 mt-4 block text-right">
+            Added {{ $note->created_at->diffForHumans() }}
+        </p>
+
+    </div>
+
+    @empty
+
+    <p class="text-sm text-gray-500 dark:text-gray-400 italic">
+        No notes added yet. Write your first markdown note below!
+    </p>
+
+    @endforelse
+</div>
+<!-- Add New Note Form -->
+<form action="{{ route('notes.store', $paper->id) }}" method="POST">
+    @csrf
+
+    <div>
+        <label
+            for="content"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
+            Write a new note (Supports Markdown)
+        </label>
+
+        <textarea
+            id="content"
+            name="content"
+            rows="4"
+            class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+            placeholder="## Key Takeaways&#10;- Point 1&#10;- Point 2&#10;&#10;**Bold text** and *italic* supported."
+        ></textarea>
+    </div>
+
+    <div class="mt-3 text-right">
+        <x-primary-button type="submit">
+            Save Note
+        </x-primary-button>
+    </div>
+</form>
+
         </div>
     </div>
 </x-app-layout>
