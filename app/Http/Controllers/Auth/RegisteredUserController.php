@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -33,14 +34,16 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'role' => ['required', 'string', 'in:administrator,researcher'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // The role is deliberately NOT accepted from the request. Allowing a
+        // visitor to pick their own account type let anyone self-register as an
+        // administrator. Roles are assigned by an existing administrator.
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
+            'role' => UserRole::Researcher,
             'password' => Hash::make($request->password),
         ]);
 

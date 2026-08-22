@@ -21,6 +21,12 @@
 /storage/*.key
 /storage/pail
 /vendor
+
+# The legacy TypeScript ScholarDesk kept alongside this project as a product
+# reference. It is a separate git repository; committing it here would embed a
+# broken submodule reference in this one.
+/scholardesk
+
 _ide_helper.php
 Homestead.json
 Homestead.yaml

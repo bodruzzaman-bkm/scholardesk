@@ -1,11 +1,13 @@
 * text=auto eol=lf
 
-*.blade.php diff=html
-*.css diff=css
-*.html diff=html
-*.md diff=markdown
-*.php diff=php
+# Shell scripts must keep LF endings. With CRLF the Alpine container fails to
+# start with "bad interpreter", which is a confusing way to learn about git's
+# autocrlf setting.
+*.sh text eol=lf
+docker/entrypoint.sh text eol=lf
 
-/.github export-ignore
-CHANGELOG.md export-ignore
-.styleci.yml export-ignore
+# Binary, never touch.
+*.pdf binary
+*.sqlite binary
+*.png binary
+*.jpg binary

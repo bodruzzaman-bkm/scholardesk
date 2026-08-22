@@ -32,5 +32,17 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+
+        <!--
+            No real AI credentials in the test environment.
+
+            Without these the suite inherits the keys from .env, which means
+            "unconfigured" tests see a configured service and any un-faked
+            request would hit a live provider and spend real quota.
+            Tests that need a configured provider set a dummy key themselves.
+        -->
+        <env name="GROQ_API_KEY" value=""/>
+        <env name="GEMINI_API_KEY" value=""/>
+        <env name="AI_PROVIDER" value="groq"/>
     </php>
 </phpunit>
