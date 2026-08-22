@@ -1,0 +1,66 @@
+# Fly.io deployment for ScholarDesk.
+#
+# Deployed straight from this directory with `fly deploy` — no Git remote and
+# no GitHub involved.
+#
+# Change `app` to your own unique name before the first deploy.
+
+app = "scholardesk"
+primary_region = "sin"          # Singapore: closest Fly region to Bangladesh
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  LOG_CHANNEL = "stderr"        # Fly collects stdout/stderr; no log file to rotate
+
+  # SQLite on the mounted volume, not inside the container image.
+  DB_CONNECTION = "sqlite"
+  DB_DATABASE = "/data/database.sqlite"
+  DATA_DIR = "/data"
+
+  # Sessions and cache in the database: a second machine would not share
+  # file-based sessions, and this keeps logins working if the app ever scales.
+  SESSION_DRIVER = "database"
+  CACHE_STORE = "database"
+  QUEUE_CONNECTION = "sync"     # indexing runs inline; no separate worker needed
+
+  AI_PROVIDER = "groq"
+  GROQ_CHAT_MODEL = "openai/gpt-oss-120b"
+
+# Everything that must survive a redeploy. Without this the database and every
+# uploaded PDF are wiped each time the image is rebuilt.
+[[mounts]]
+  source = "scholardesk_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # Zero means the machine sleeps when idle and wakes on the next request:
+  # free to leave running, at the cost of a few seconds on the first hit.
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+    hard_limit = 40
+
+  # Laravel's built-in health endpoint.
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/up"
+
+[[vm]]
+  # 512 MB is enough for PHP plus PDF parsing; 256 MB risks an OOM on a large
+  # PDF during text extraction.
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
