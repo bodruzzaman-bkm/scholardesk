@@ -2,57 +2,89 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ActivityType;
 use App\Models\Note;
 use App\Models\Paper;
+use App\Services\ActivityService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class NoteController extends Controller
 {
-    // Save a new note
-    public function store(Request $request, Paper $paper)
-    {
-        if ($paper->user_id !== Auth::id()) abort(403);
+    public function __construct(private ActivityService $activities) {}
 
-        $request->validate(['content' => 'required|string']);
+    // Save a new note
+    public function store(Request $request, Paper $paper): RedirectResponse
+    {
+        $this->authorize('annotate', $paper);
+
+        $validated = $request->validate([
+            'content' => ['required', 'string', 'max:20000'],
+        ]);
 
         $paper->notes()->create([
             'user_id' => Auth::id(),
-            'content' => $request->content,
+            'content' => $validated['content'],
         ]);
 
-        return back()->with('success', 'Note added successfully!');
+        $this->recordActivity($request, $paper);
+
+        return back()->with('success', 'Note added.');
     }
 
     // Show the edit form
-    public function edit(Note $note)
+    public function edit(Note $note): View
     {
-        if ($note->user_id !== Auth::id()) abort(403);
+        $this->authorize('update', $note);
 
         return view('notes.edit', compact('note'));
     }
 
     // Update the note
-    public function update(Request $request, Note $note)
+    public function update(Request $request, Note $note): RedirectResponse
     {
-        if ($note->user_id !== Auth::id()) abort(403);
+        $this->authorize('update', $note);
 
-        $request->validate(['content' => 'required|string']);
+        $validated = $request->validate([
+            'content' => ['required', 'string', 'max:20000'],
+        ]);
 
-        $note->update(['content' => $request->content]);
+        $note->update($validated);
 
         return redirect()
             ->route('papers.show', $note->paper_id)
-            ->with('success', 'Note updated!');
+            ->with('success', 'Note updated.');
     }
 
     // Delete the note
-    public function destroy(Note $note)
+    public function destroy(Note $note): RedirectResponse
     {
-        if ($note->user_id !== Auth::id()) abort(403);
+        $this->authorize('delete', $note);
 
         $note->delete();
 
-        return back()->with('success', 'Note deleted!');
+        return back()->with('success', 'Note deleted.');
+    }
+
+    /**
+     * Record the note in the activity feed of every collection the paper
+     * belongs to, so collaborators can see that work is happening.
+     *
+     * The note's *content* is deliberately not included in the metadata:
+     * notes are private to their author even inside a shared collection, so
+     * the feed reports only that a note was written.
+     */
+    private function recordActivity(Request $request, Paper $paper): void
+    {
+        foreach ($paper->collections()->get() as $collection) {
+            $this->activities->record(
+                $collection,
+                $request->user(),
+                ActivityType::NoteAdded,
+                ['paper_id' => $paper->id, 'title' => $paper->title],
+            );
+        }
     }
 }

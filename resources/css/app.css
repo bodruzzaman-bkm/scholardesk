@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Alpine renders x-show/x-if elements before it initialises, which flashes the
+ * hidden content on first paint. x-cloak is removed by Alpine on init.
+ */
+[x-cloak] {
+    display: none !important;
+}

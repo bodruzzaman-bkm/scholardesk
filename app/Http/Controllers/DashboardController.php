@@ -3,37 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\Paper;
-use App\Models\Collection;
-use App\Models\Highlight;
-use Illuminate\Http\Request;
+use App\Services\AiService;
+use App\Services\AnalyticsService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function __construct(private AnalyticsService $analytics) {}
+
+    public function index(AiService $ai): View
     {
         $userId = Auth::id();
 
-        // 1. Get Quick Stats
-        $stats = [
-            'total_papers' => Paper::where('user_id', $userId)->count(),
-            'total_collections' => Collection::where('user_id', $userId)->count(),
-            'total_notes' => Highlight::where('user_id', $userId)->count(),
-        ];
-
-        // 2. Get Reading Status Breakdown
-        $readingStatus = [
-            'to_read' => Paper::where('user_id', $userId)->where('reading_status', 'to read')->count(),
-            'reading' => Paper::where('user_id', $userId)->where('reading_status', 'reading')->count(),
-            'read' => Paper::where('user_id', $userId)->where('reading_status', 'read')->count(),
-        ];
-
-        // 3. Get the latest paper currently being read
-        $continueReading = Paper::where('user_id', $userId)
-                                ->where('reading_status', 'reading')
-                                ->latest()
-                                ->first();
-
-        return view('dashboard', compact('stats', 'readingStatus', 'continueReading'));
+        return view('dashboard', [
+            'aiConfigured' => $ai->isConfigured(),
+            // Drives the "nothing indexed yet" hint under the assistant.
+            'indexedPapers' => Paper::query()->ownedBy($userId)->where('index_status', 'indexed')->count(),
+            'stats' => $this->analytics->headlineStats($userId),
+            'readingStatus' => $this->analytics->readingStatusBreakdown($userId),
+            'continueReading' => $this->analytics->continueReading($userId),
+            'recentPapers' => $this->analytics->recentPapers($userId),
+            'topTags' => $this->analytics->topTags($userId),
+            'papersByYear' => $this->analytics->papersByYear($userId),
+            'addedByMonth' => $this->analytics->papersAddedByMonth($userId),
+        ]);
     }
 }

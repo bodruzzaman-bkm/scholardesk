@@ -5,100 +5,173 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
-            <!-- Quick Stats Row -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Total Papers (Clickable) -->
-                <a href="{{ route('papers.index') }}" class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6 flex items-center space-x-4 border-l-4 border-indigo-500 hover:bg-indigo-50 dark:hover:bg-gray-700 transition duration-200 cursor-pointer group block">
-                    <div class="p-3 bg-indigo-100 dark:bg-indigo-900 rounded-full group-hover:scale-110 transition duration-200">
-                        <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Papers</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['total_papers'] }}</p>
-                    </div>
-                </a>
 
-                <!-- Total Collections (Clickable) -->
-                <a href="{{ route('collections.index') }}" class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6 flex items-center space-x-4 border-l-4 border-green-500 hover:bg-green-50 dark:hover:bg-gray-700 transition duration-200 cursor-pointer group block">
-                    <div class="p-3 bg-green-100 dark:bg-green-900 rounded-full group-hover:scale-110 transition duration-200">
-                        <svg class="w-6 h-6 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Collections</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['total_collections'] }}</p>
-                    </div>
-                </a>
+            <x-flash />
 
-                <!-- Total Notes (Non-clickable) -->
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6 flex items-center space-x-4 border-l-4 border-yellow-500">
-                    <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
-                        <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Highlights & Notes</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['total_notes'] }}</p>
-                    </div>
-                </div>
+            {{-- Headline stats --}}
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <x-stat-card label="Papers" :value="$stats['papers']" accent="indigo" :href="route('papers.index')" />
+                <x-stat-card label="Collections" :value="$stats['collections']" accent="green" :href="route('collections.index')" />
+                <x-stat-card label="Tags" :value="$stats['tags']" accent="purple" :href="route('tags.index')" />
+                {{-- Counts highlights AND notes; the old dashboard counted only
+                     highlights while labelling the card "Highlights & notes". --}}
+                <x-stat-card label="Highlights &amp; notes" :value="$stats['highlights'] + $stats['notes']" accent="amber" />
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Continue Reading Section -->
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b dark:border-gray-700 pb-2">Continue Reading</h3>
-                    
-                    @if($continueReading)
-                        <div class="p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-100 dark:border-indigo-800">
-                            <h4 class="font-semibold text-indigo-900 dark:text-indigo-200 line-clamp-1">{{ $continueReading->title }}</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ $continueReading->authors ?? 'Unknown Author' }} | {{ $continueReading->year }}</p>
+            {{-- Ask across the whole library. Placed on the dashboard because
+                 gating cross-paper Q&A behind "first create a collection" made
+                 the product's headline feature undiscoverable. --}}
+            <x-ai.chat
+                scope="library"
+                :configured="$aiConfigured"
+                :ready="$indexedPapers > 0"
+                not-ready-message="No papers have indexed text yet, so there is nothing to search. Upload a PDF, or open a paper and choose “Index now”."
+            />
+
+            @if ($aiConfigured && $indexedPapers === 0 && $stats['papers'] > 0)
+                <div class="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                    None of your papers have indexed text yet, so the assistant has nothing to search.
+                    Open a paper and choose <span class="font-medium">Index now</span>, or upload a PDF —
+                    text is extracted automatically.
+                </div>
+            @endif
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {{-- Continue reading --}}
+                <div class="lg:col-span-2 bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                        Continue reading
+                    </h3>
+
+                    @if ($continueReading)
+                        <div class="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-4">
+                            <a href="{{ route('papers.show', $continueReading) }}"
+                               class="font-semibold text-indigo-900 dark:text-indigo-100 hover:underline">
+                                {{ $continueReading->title }}
+                            </a>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                {{ $continueReading->authors ?: 'Unknown authors' }}
+                                @if ($continueReading->year) · {{ $continueReading->year }} @endif
+                            </p>
                             <div class="mt-4 flex justify-between items-center">
-                                <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Reading</span>
-                                @if($continueReading->file_path)
-                                    <a href="{{ route('papers.read', $continueReading->id) }}" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded transition">
-                                        Open Reader &rarr;
+                                <span class="px-2 py-1 text-xs rounded-full {{ $continueReading->reading_status?->badgeClasses() }}">
+                                    {{ $continueReading->reading_status?->label() }}
+                                </span>
+                                @if ($continueReading->hasPdf())
+                                    <a href="{{ route('papers.read', $continueReading) }}"
+                                       class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                                        Open reader &rarr;
                                     </a>
-                                @else
-                                    <span class="text-sm text-red-500">No PDF uploaded</span>
                                 @endif
                             </div>
                         </div>
                     @else
-                        <p class="text-gray-500 dark:text-gray-400 text-center py-6">You are not reading any papers right now.</p>
-                        <div class="text-center">
-                            <a href="{{ route('papers.index') }}" class="text-indigo-600 hover:underline">Go to Library</a>
-                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Nothing in progress. Set a paper's status to <em>Reading</em> and it will appear here.
+                        </p>
                     @endif
+
+                    {{-- Recently added --}}
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-6 mb-2">Recently added</h4>
+                    @forelse ($recentPapers as $paper)
+                        @if ($loop->first) <ul class="divide-y divide-gray-100 dark:divide-gray-700"> @endif
+                        <li class="py-2 flex justify-between items-center gap-3">
+                            <a href="{{ route('papers.show', $paper) }}"
+                               class="text-sm text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 truncate">
+                                {{ $paper->title }}
+                            </a>
+                            <span class="text-xs text-gray-400 whitespace-nowrap">{{ $paper->created_at->diffForHumans() }}</span>
+                        </li>
+                        @if ($loop->last) </ul> @endif
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            No papers yet —
+                            <a href="{{ route('papers.create') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">add your first</a>.
+                        </p>
+                    @endforelse
                 </div>
 
-                <!-- Reading Status Overview -->
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b dark:border-gray-700 pb-2">Reading Progress</h3>
-                    
-                    <div class="space-y-4 mt-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"><span class="w-3 h-3 rounded-full bg-yellow-400 mr-2"></span> To Read</span>
-                            <span class="font-bold text-gray-900 dark:text-white">{{ $readingStatus['to_read'] }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"><span class="w-3 h-3 rounded-full bg-blue-500 mr-2"></span> Currently Reading</span>
-                            <span class="font-bold text-gray-900 dark:text-white">{{ $readingStatus['reading'] }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"><span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span> Read Completed</span>
-                            <span class="font-bold text-gray-900 dark:text-white">{{ $readingStatus['read'] }}</span>
-                        </div>
+                {{-- Reading progress --}}
+                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                        Reading progress
+                    </h3>
+
+                    @php($totalPapers = array_sum($readingStatus))
+                    <div class="space-y-3">
+                        @foreach (\App\Enums\ReadingStatus::cases() as $status)
+                            @php($count = $readingStatus[$status->value] ?? 0)
+                            @php($pct = $totalPapers > 0 ? round($count / $totalPapers * 100) : 0)
+                            <a href="{{ route('papers.index', ['status' => $status->value]) }}" class="block group">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-700 dark:text-gray-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                                        {{ $status->label() }}
+                                    </span>
+                                    <span class="font-semibold text-gray-900 dark:text-gray-100">{{ $count }}</span>
+                                </div>
+                                {{-- Progress bar doubles as the proportion chart --}}
+                                <div class="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                    <div class="h-full rounded-full bg-indigo-500" style="width: {{ $pct }}%"></div>
+                                </div>
+                            </a>
+                        @endforeach
                     </div>
-                    
-                    <div class="mt-6 pt-4 border-t dark:border-gray-700">
-                        <a href="{{ route('papers.create') }}" class="w-full block text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
-                            + Add New Paper
-                        </a>
-                    </div>
+
+                    <a href="{{ route('papers.create') }}"
+                       class="mt-6 block text-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm font-medium">
+                        + Add new paper
+                    </a>
                 </div>
             </div>
 
+            {{-- Tags + publication years --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Most-used tags</h3>
+                    @forelse ($topTags as $tag)
+                        @if ($loop->first) <div class="space-y-2"> @endif
+                        <a href="{{ route('papers.index', ['tag' => $tag->id]) }}" class="flex items-center gap-3 group">
+                            <span class="w-3 h-3 rounded-full shrink-0" style="background-color: {{ $tag->color }}"></span>
+                            <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 flex-1 truncate">
+                                {{ $tag->name }}
+                            </span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $tag->papers_count }}</span>
+                        </a>
+                        @if ($loop->last) </div> @endif
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            No tags in use yet —
+                            <a href="{{ route('tags.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">create one</a>.
+                        </p>
+                    @endforelse
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Papers by publication year</h3>
+                    @if (empty($papersByYear))
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            No publication years recorded yet. Add a DOI and the year is fetched automatically.
+                        </p>
+                    @else
+                        @php($maxYearCount = max($papersByYear))
+                        <div class="space-y-2">
+                            @foreach ($papersByYear as $year => $count)
+                                <a href="{{ route('papers.index', ['year' => $year]) }}" class="flex items-center gap-3 group">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 w-10 shrink-0">{{ $year }}</span>
+                                    <div class="flex-1 h-4 rounded bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                        <div class="h-full rounded bg-indigo-400 group-hover:bg-indigo-500 transition"
+                                             style="width: {{ $maxYearCount > 0 ? round($count / $maxYearCount * 100) : 0 }}%"></div>
+                                    </div>
+                                    <span class="text-xs font-medium text-gray-900 dark:text-gray-100 w-6 text-right">{{ $count }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </x-app-layout>

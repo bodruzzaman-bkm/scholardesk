@@ -32,5 +32,9 @@
                 {{ $slot }}
             </main>
         </div>
+
+        {{-- Component-pushed scripts (AI panel, etc.). Placed after Alpine has
+             loaded via @vite so x-data factories are defined in time. --}}
+        @stack('scripts')
     </body>
 </html>
