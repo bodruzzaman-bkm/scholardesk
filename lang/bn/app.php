@@ -56,4 +56,11 @@ return [
     'loading' => 'লোড হচ্ছে…',
     'no_results' => 'কোনো ফলাফল নেই।',
     'language' => 'ভাষা',
+
+    // Analytics (requirement 21)
+    'analytics' => 'বিশ্লেষণ',
+    'papers' => 'পেপার',
+    'highlights_and_notes' => 'হাইলাইট ও নোট',
+    'reports' => 'রিপোর্ট',
+    'report' => 'রিপোর্ট করুন',
 ];

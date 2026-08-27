@@ -70,6 +70,32 @@ class AnalyticsService
     }
 
     /**
+     * Papers grouped by publication venue, busiest first.
+     *
+     * Requirement 21 lists venue alongside year, tag and reading status. Blank
+     * venues are excluded rather than bucketed as "Unknown": a paper imported
+     * from a DOI that resolved no venue says nothing about where the user
+     * publishes, and a large "Unknown" bar would dominate the chart without
+     * meaning anything.
+     *
+     * @return array<string, int>
+     */
+    public function papersByVenue(int $userId, int $limit = 10): array
+    {
+        return Paper::query()
+            ->ownedBy($userId)
+            ->whereNotNull('venue')
+            ->where('venue', '!=', '')
+            ->groupBy('venue')
+            ->select('venue', DB::raw('count(*) as aggregate'))
+            ->orderByDesc('aggregate')
+            ->limit($limit)
+            ->pluck('aggregate', 'venue')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+    }
+
+    /**
      * Most-used tags with their paper counts and colours.
      *
      * @return \Illuminate\Support\Collection<int, Tag>

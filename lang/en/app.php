@@ -59,4 +59,11 @@ return [
     'loading' => 'Loading…',
     'no_results' => 'No results.',
     'language' => 'Language',
+
+    // Analytics (requirement 21)
+    'analytics' => 'Analytics',
+    'papers' => 'Papers',
+    'highlights_and_notes' => 'Highlights & notes',
+    'reports' => 'Reports',
+    'report' => 'Report',
 ];

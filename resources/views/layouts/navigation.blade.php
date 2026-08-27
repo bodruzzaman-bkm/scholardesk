@@ -31,6 +31,9 @@
                     <x-nav-link :href="route('search')" :active="request()->routeIs('search')">
                         {{ __('app.search') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('analytics')" :active="request()->routeIs('analytics')">
+                        {{ __('app.analytics') }}
+                    </x-nav-link>
                     @if (auth()->user()?->isAdmin())
                         <x-nav-link :href="route('admin.index')" :active="request()->routeIs('admin.*')">
                             {{ __('app.admin') }}
@@ -119,6 +122,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('search')" :active="request()->routeIs('search')">
                 {{ __('app.search') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analytics')" :active="request()->routeIs('analytics')">
+                {{ __('app.analytics') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
                 {{ __('app.notifications') }} @if ($unreadCount > 0) ({{ $unreadCount }}) @endif
