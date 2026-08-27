@@ -24,8 +24,10 @@ Built with Laravel and Blade for the CSE470 curriculum.
 - **Reading status** — *To read* → *Reading* → *Read*, changed inline from the
   library, the reader, or the paper page.
 - **Coloured tags** — see [docs/tags-feature.md](docs/tags-feature.md).
-- **Citations** — copy or download BibTeX, RIS and APA for one paper or a whole
-  collection. A collection can also be downloaded as a zip bundle.
+- **Citations** — copy or download **BibTeX, APA and plain text** for one paper
+  or a whole collection.
+- **Full collection export** — one zip carrying every paper's PDF, a Markdown
+  document with your notes, and a BibTeX bibliography.
 
 ### Reader
 
@@ -53,15 +55,18 @@ the language model as context.
 
 ### Collaboration
 
-- **Shared collections** with per-member roles (viewer / editor).
-- **Comments** on collections.
+- **Shared collections** with per-member roles (owner / editor / viewer).
+- **Threaded comments** on collections and on individual papers.
 - **Activity feed** — who added, annotated or changed what.
-- **In-app notifications** with an unread badge.
+- **In-app notifications** with an unread badge, plus a matching email.
 
 ### Administration
 
+- **Analytics dashboard** — papers added over time, and breakdowns by year,
+  venue, tag and reading status.
 - **Role-based access** — administrator and researcher.
-- **Admin portal** — manage user roles and moderate comments.
+- **Admin portal** — manage user roles, moderate comments, and work a report
+  queue. Any user can flag a comment or a paper for review.
 - **Bilingual UI** — English and Bangla, switchable in Settings.
 
 ---
@@ -154,6 +159,10 @@ including DOI lookups.
 php artisan test
 ```
 
+**368 tests, 1,082 assertions.** No network access is needed — outbound HTTP
+is faked, and `Http::preventStrayRequests()` fails the suite if any test tries
+to reach a real host.
+
 ---
 
 ## ☁️ Deployment
@@ -191,7 +200,33 @@ app/
   Support/        small value helpers (DOI parsing, markdown sanitising)
 docs/             setup and feature guides
 resources/views/  Blade templates and components
+module 1..4/      course submission packages (see below)
 ```
+
+### Course submission packages
+
+The four `module N/` folders package the project the way the CSE470 course
+asks for it — module by module. Each one holds:
+
+- `features.md` — every requirement in that module, the code path, the actual
+  code, and the file and line it lives in
+- `code/` — copies of the real source files, at their real project paths
+- `sync.ps1` — rebuilds `code/` from the live app, so the copies cannot
+  silently drift
+
+| Folder | Requirements | Tests |
+|---|---|---|
+| `module 1/` | Auth + 1–6 — accounts and core library | 139 |
+| `module 2/` | 7–10 — reading, annotation, single-paper AI | 69 |
+| `module 3/` | 11–15 — advanced AI and citation export | 76 |
+| `module 4/` | 16–22 — collaboration, analytics, administration | 98 |
+
+They are documentation, not a second copy of the app: nothing in `module N/`
+is loaded at runtime.
+
+`tests/Feature/RequirementCoverageTest.php` walks all 22 numbered
+requirements, one test each, so "everything works" is something the suite
+proves rather than something a person re-checks by hand.
 
 ---
 
