@@ -1,18 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center gap-4 flex-wrap">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('My library') }}
-                <span class="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
-                    {{ $papers->total() }} {{ Str::plural('paper', $papers->total()) }}
-                </span>
-            </h2>
-
-            <a href="{{ route('papers.create') }}"
-               class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition text-sm font-medium">
-                + Add paper
+        <x-page-header :title="__('My library')"
+                       :subtitle="$papers->total().' '.Str::plural('paper', $papers->total())">
+            <a href="{{ route('papers.create') }}" class="btn btn-md btn-primary">
+                <x-icon name="plus" class="w-4 h-4" />
+                Add paper
             </a>
-        </div>
+        </x-page-header>
     </x-slot>
 
     <div class="py-8">
@@ -40,46 +34,42 @@
             </div>
 
             {{-- Search + filters --}}
-            <form method="GET" action="{{ route('papers.index') }}"
-                  class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-4 space-y-3">
+            <form method="GET" action="{{ route('papers.index') }}" class="card card-body space-y-3">
 
                 <div class="flex gap-3 flex-wrap">
                     <div class="flex-1 min-w-[240px]">
                         <label for="q" class="sr-only">Search</label>
                         <input id="q" type="search" name="q" value="{{ $filters['q'] ?? '' }}"
                                placeholder="Search title, authors, abstract, venue or DOI…"
-                               class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                               class="field">
                     </div>
 
-                    <button type="submit"
-                            class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition text-sm font-medium">
+                    <button type="submit" class="btn btn-md btn-primary">
+                        <x-icon name="search" class="w-4 h-4" />
                         Search
                     </button>
 
                     @if (collect($filters)->filter(fn ($v) => filled($v))->isNotEmpty())
-                        <a href="{{ route('papers.index') }}"
-                           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                            Clear
-                        </a>
+                        <a href="{{ route('papers.index') }}" class="btn btn-md btn-secondary">Clear</a>
                     @endif
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
-                    <select name="tag" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                    <select name="tag" class="field">
                         <option value="">All tags</option>
                         @foreach ($tags as $tag)
                             <option value="{{ $tag->id }}" @selected(($filters['tag'] ?? null) == $tag->id)>{{ $tag->name }}</option>
                         @endforeach
                     </select>
 
-                    <select name="collection" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                    <select name="collection" class="field">
                         <option value="">All collections</option>
                         @foreach ($collections as $collection)
                             <option value="{{ $collection->id }}" @selected(($filters['collection'] ?? null) == $collection->id)>{{ $collection->name }}</option>
                         @endforeach
                     </select>
 
-                    <select name="year" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                    <select name="year" class="field">
                         <option value="">Any year</option>
                         @foreach ($years as $year)
                             <option value="{{ $year }}" @selected(($filters['year'] ?? null) == $year)>{{ $year }}</option>
@@ -88,7 +78,7 @@
 
                     {{-- Author filter (requirement 12). Names are split out of
                          the comma-separated `authors` column. --}}
-                    <select name="author" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                    <select name="author" class="field">
                         <option value="">Any author</option>
                         @foreach ($authors as $author)
                             <option value="{{ $author }}" @selected(($filters['author'] ?? null) === $author)>
@@ -97,14 +87,14 @@
                         @endforeach
                     </select>
 
-                    <select name="venue" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                    <select name="venue" class="field">
                         <option value="">Any venue</option>
                         @foreach ($venues as $venue)
                             <option value="{{ $venue }}" @selected(($filters['venue'] ?? null) === $venue)>{{ Str::limit($venue, 30) }}</option>
                         @endforeach
                     </select>
 
-                    <select name="sort" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                    <select name="sort" class="field">
                         <option value="">Newest first</option>
                         <option value="oldest" @selected(($filters['sort'] ?? null) === 'oldest')>Oldest first</option>
                         <option value="title" @selected(($filters['sort'] ?? null) === 'title')>Title A–Z</option>
@@ -121,7 +111,7 @@
             {{-- Results --}}
             @forelse ($papers as $paper)
                 @if ($loop->first)
-                    <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg divide-y divide-gray-100 dark:divide-gray-700">
+                    <div class="card divide-y divide-gray-100 dark:divide-gray-700/60 overflow-hidden">
                 @endif
 
                 <div class="p-4 flex gap-4 items-start hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
@@ -157,8 +147,8 @@
                             {{-- Labelled "Open PDF", not "Read": a button reading
                                  "Read" beside a status that can also say "Read"
                                  looked like it would mark the paper read. --}}
-                            <a href="{{ route('papers.read', $paper) }}"
-                               class="text-xs px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition whitespace-nowrap">
+                            <a href="{{ route('papers.read', $paper) }}" class="btn btn-sm btn-primary whitespace-nowrap">
+                                <x-icon name="book-open" class="w-3.5 h-3.5" />
                                 Open PDF
                             </a>
                         @endif
@@ -170,19 +160,19 @@
                 @endif
             @empty
                 {{-- Empty state: distinguishes "no papers at all" from "no matches" --}}
-                <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-12 text-center">
+                <div class="card">
                     @if (collect($filters)->filter(fn ($v) => filled($v))->isNotEmpty())
-                        <p class="text-gray-600 dark:text-gray-300 font-medium">No papers match these filters.</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Try a broader search or clear the filters.</p>
-                        <a href="{{ route('papers.index') }}" class="inline-block mt-4 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                            Clear filters
-                        </a>
+                        <x-empty-state icon="search"
+                                       title="No papers match these filters."
+                                       description="Try a broader search, or clear the filters to see your whole library.">
+                            <a href="{{ route('papers.index') }}" class="btn btn-md btn-secondary">Clear filters</a>
+                        </x-empty-state>
                     @else
-                        <p class="text-gray-600 dark:text-gray-300 font-medium">No papers yet.</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Add one with a PDF or a DOI to get started.</p>
-                        <a href="{{ route('papers.create') }}" class="inline-block mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700">
-                            + Add your first paper
-                        </a>
+                        <x-empty-state icon="library"
+                                       title="No papers yet."
+                                       description="Add one with a PDF, a DOI, or a link to the article page."
+                                       action-label="Add your first paper"
+                                       :action-href="route('papers.create')" />
                     @endif
                 </div>
             @endforelse

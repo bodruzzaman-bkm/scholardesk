@@ -9,3 +9,188 @@
 [x-cloak] {
     display: none !important;
 }
+
+@layer base {
+    /*
+     * A visible focus ring on keyboard navigation only.
+     *
+     * :focus-visible rather than :focus, so a mouse click on a button does not
+     * leave a ring behind, but tabbing through the page always shows where you
+     * are. Without this the app is close to unusable from the keyboard.
+     */
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+        outline: 2px solid theme('colors.indigo.500');
+        outline-offset: 2px;
+        border-radius: theme('borderRadius.md');
+    }
+
+    /* The default ring is redundant once the outline above exists. */
+    :where(a, button, summary):focus {
+        outline-color: theme('colors.indigo.500');
+    }
+
+    body {
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
+    /*
+     * Long titles, DOIs and author lists are the norm here, and a DOI has no
+     * spaces to break on. Without this they push their container wide and the
+     * page scrolls sideways.
+     */
+    h1, h2, h3 {
+        overflow-wrap: break-word;
+    }
+}
+
+@layer components {
+    /*
+     * ---------------------------------------------------------------
+     * Buttons
+     * ---------------------------------------------------------------
+     * These existed as the same ~8 utility classes copy-pasted at every
+     * call site, which is why sizes and hover states had drifted apart
+     * across pages. One definition each, used everywhere.
+     */
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium
+               transition-colors duration-150 select-none
+               disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none;
+    }
+
+    .btn-sm { @apply px-3 py-1.5 text-xs; }
+    .btn-md { @apply px-4 py-2 text-sm; }
+    .btn-lg { @apply px-6 py-3 text-base; }
+
+    .btn-primary {
+        @apply bg-indigo-600 text-white shadow-sm
+               hover:bg-indigo-700 active:bg-indigo-800;
+    }
+
+    .btn-secondary {
+        @apply bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200
+               border border-gray-300 dark:border-gray-600 shadow-sm
+               hover:bg-gray-50 dark:hover:bg-gray-700;
+    }
+
+    .btn-danger {
+        @apply bg-red-600 text-white shadow-sm hover:bg-red-700 active:bg-red-800;
+    }
+
+    .btn-ghost {
+        @apply text-gray-600 dark:text-gray-300
+               hover:bg-gray-100 dark:hover:bg-gray-700;
+    }
+
+    /*
+     * ---------------------------------------------------------------
+     * Surfaces
+     * ---------------------------------------------------------------
+     */
+    .card {
+        @apply bg-white dark:bg-gray-800 rounded-xl
+               border border-gray-200/80 dark:border-gray-700/60
+               shadow-sm;
+    }
+
+    /* Cards that are themselves links or buttons get a lift on hover. */
+    .card-interactive {
+        @apply transition-all duration-150
+               hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/60;
+    }
+
+    .card-body { @apply p-5 sm:p-6; }
+
+    .card-header {
+        @apply px-5 sm:px-6 py-4 border-b border-gray-200/80 dark:border-gray-700/60;
+    }
+
+    /*
+     * ---------------------------------------------------------------
+     * Forms
+     * ---------------------------------------------------------------
+     */
+    .field {
+        @apply block w-full rounded-lg shadow-sm text-sm
+               border-gray-300 dark:border-gray-600
+               bg-white dark:bg-gray-900
+               text-gray-900 dark:text-gray-100
+               placeholder:text-gray-400 dark:placeholder:text-gray-500
+               focus:border-indigo-500 focus:ring-indigo-500;
+    }
+
+    .field-label {
+        @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5;
+    }
+
+    .field-hint {
+        @apply mt-1.5 text-xs text-gray-500 dark:text-gray-400;
+    }
+
+    /*
+     * ---------------------------------------------------------------
+     * Badges
+     * ---------------------------------------------------------------
+     */
+    .badge {
+        @apply inline-flex items-center gap-1 px-2 py-0.5
+               rounded-full text-xs font-medium whitespace-nowrap;
+    }
+
+    .badge-neutral { @apply bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200; }
+    .badge-indigo  { @apply bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300; }
+    .badge-green   { @apply bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300; }
+    .badge-amber   { @apply bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300; }
+    .badge-red     { @apply bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300; }
+
+    /*
+     * ---------------------------------------------------------------
+     * Typography
+     * ---------------------------------------------------------------
+     */
+    .page-title {
+        @apply text-xl font-semibold text-gray-900 dark:text-gray-100 leading-tight;
+    }
+
+    .section-title {
+        @apply text-base font-semibold text-gray-900 dark:text-gray-100;
+    }
+
+    .muted { @apply text-sm text-gray-500 dark:text-gray-400; }
+
+    /*
+     * A quiet link that still reads as a link. `underline-offset` keeps the
+     * rule off the descenders on hover.
+     */
+    .link {
+        @apply text-indigo-600 dark:text-indigo-400
+               hover:text-indigo-700 dark:hover:text-indigo-300
+               hover:underline underline-offset-2;
+    }
+
+    /*
+     * ---------------------------------------------------------------
+     * Tables
+     * ---------------------------------------------------------------
+     * Wide tables must scroll inside their own container rather than
+     * making the whole page scroll sideways on a phone.
+     */
+    .table-wrap { @apply overflow-x-auto -mx-5 sm:mx-0; }
+
+    .table-base { @apply min-w-full text-sm; }
+
+    .table-base thead th {
+        @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide
+               text-gray-500 dark:text-gray-400
+               border-b border-gray-200 dark:border-gray-700;
+    }
+
+    .table-base tbody td {
+        @apply px-4 py-3 border-b border-gray-100 dark:border-gray-700/60
+               text-gray-700 dark:text-gray-300;
+    }
+
+    .table-base tbody tr:last-child td { @apply border-b-0; }
+    .table-base tbody tr { @apply hover:bg-gray-50/70 dark:hover:bg-gray-700/30 transition-colors; }
+}

@@ -17,7 +17,7 @@
                     · {{ $collection->members->count() }} {{ Str::plural('member', $collection->members->count()) }}
                 </p>
             </div>
-            <a href="{{ route('collections.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+            <a href="{{ route('collections.index') }}" class="link text-sm">
                 &larr; Back to collections
             </a>
         </div>
@@ -34,7 +34,7 @@
 
                     {{-- Details (owner only) --}}
                     @if ($isOwner)
-                        <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                        <div class="card card-body">
                             <form method="POST" action="{{ route('collections.update', $collection) }}" class="space-y-4">
                                 @csrf
                                 @method('PUT')
@@ -58,7 +58,7 @@
                             </form>
                         </div>
                     @elseif (filled($collection->description))
-                        <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                        <div class="card card-body">
                             <p class="text-gray-600 dark:text-gray-300">{{ $collection->description }}</p>
                         </div>
                     @endif
@@ -72,7 +72,7 @@
                                 </h3>
 
                                 @if ($available->isEmpty())
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    <p class="muted">
                                         Every paper you can access is already here.
                                     </p>
                                 @else
@@ -112,7 +112,7 @@
                     @endif
 
                     {{-- Papers --}}
-                    <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                    <div class="card card-body">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
                             Papers ({{ $collection->papers->count() }})
                         </h3>
@@ -138,7 +138,7 @@
                                 </div>
 
                                 <div class="flex items-center gap-4 shrink-0">
-                                    <a href="{{ route('papers.show', $paper) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">View</a>
+                                    <a href="{{ route('papers.show', $paper) }}" class="link text-sm">View</a>
 
                                     @if ($canEdit)
                                         <form action="{{ route('collections.papers.remove', ['collection' => $collection, 'paper' => $paper]) }}"
@@ -181,8 +181,8 @@
 
                     {{-- Saved literature reviews --}}
                     @if ($collection->reviews->isNotEmpty())
-                        <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                        <div class="card card-body">
+                            <h3 class="section-title mb-4">
                                 {{ __('app.literature_review') }} drafts
                             </h3>
                             <div class="space-y-4">
@@ -202,7 +202,7 @@
                     @endif
 
                     {{-- Discussion --}}
-                    <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                    <div class="card card-body">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
                             {{ __('app.discussion') }} ({{ $comments->count() }})
                         </h3>
@@ -211,7 +211,7 @@
                             @forelse ($comments as $comment)
                                 <x-comment :comment="$comment" :collection="$collection" :can-reply="$canEdit" />
                             @empty
-                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                <p class="muted">
                                     No comments yet.
                                     {{ $canEdit ? 'Start the discussion below.' : 'Only editors can post.' }}
                                 </p>
@@ -238,27 +238,28 @@
                 <div class="space-y-6">
 
                     {{-- Export --}}
-                    <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                    <div class="card card-body">
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Export</h3>
                         <div class="space-y-2 text-sm">
                             <a href="{{ route('collections.bundle', $collection) }}"
                                class="block px-3 py-2 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition font-medium">
-                                📦 Full project bundle (.zip)
+                                <x-icon name="archive" class="w-4 h-4 shrink-0" />
+                                <span>Full project bundle (.zip)</span>
                             </a>
                             <p class="text-xs text-gray-500 dark:text-gray-400 pb-2">
                                 The PDFs, your notes, a BibTeX bibliography and the latest review draft.
                             </p>
                             <div class="flex gap-3 text-sm border-t border-gray-200 dark:border-gray-700 pt-2">
                                 <span class="text-gray-500 dark:text-gray-400">Citations:</span>
-                                <a href="{{ route('collections.export', ['collection' => $collection, 'format' => 'bibtex']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">BibTeX</a>
-                                <a href="{{ route('collections.export', ['collection' => $collection, 'format' => 'apa']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">APA</a>
-                                <a href="{{ route('collections.export', ['collection' => $collection, 'format' => 'text']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Text</a>
+                                <a href="{{ route('collections.export', ['collection' => $collection, 'format' => 'bibtex']) }}" class="link">BibTeX</a>
+                                <a href="{{ route('collections.export', ['collection' => $collection, 'format' => 'apa']) }}" class="link">APA</a>
+                                <a href="{{ route('collections.export', ['collection' => $collection, 'format' => 'text']) }}" class="link">Text</a>
                             </div>
                         </div>
                     </div>
 
                     {{-- Collaborators --}}
-                    <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                    <div class="card card-body">
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
                             {{ __('app.collaborators') }}
                         </h3>
@@ -292,7 +293,9 @@
                                               onsubmit="return confirm('Remove {{ $member->user?->name }} from this collection?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-xs text-red-600 dark:text-red-400 hover:underline">✕</button>
+                                            <button type="submit" class="p-1 rounded text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" aria-label="Remove from collection" title="Remove from collection">
+                                                    <x-icon name="x" class="w-4 h-4" />
+                                                </button>
                                         </form>
                                     @else
                                         <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 whitespace-nowrap">
@@ -323,7 +326,7 @@
                     </div>
 
                     {{-- Activity feed --}}
-                    <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                    <div class="card card-body">
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{{ __('app.activity') }}</h3>
 
                         @forelse ($activities as $activity)
@@ -340,7 +343,7 @@
                             </li>
                             @if ($loop->last) </ol> @endif
                         @empty
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Nothing has happened here yet.</p>
+                            <p class="muted">Nothing has happened here yet.</p>
                         @endforelse
                     </div>
 

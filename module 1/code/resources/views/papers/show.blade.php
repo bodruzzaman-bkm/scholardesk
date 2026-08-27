@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Paper details') }}
             </h2>
-            <a href="{{ route('papers.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+            <a href="{{ route('papers.index') }}" class="link text-sm">
                 &larr; Back to library
             </a>
         </div>
@@ -21,7 +21,7 @@
             <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div class="lg:col-span-2 space-y-6">
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="card card-body">
 
                 <!-- Title + reading status -->
                 <div class="flex justify-between items-start gap-4 border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 flex-wrap">
@@ -38,19 +38,19 @@
                 <!-- Metadata -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Authors</p>
+                        <p class="muted">Authors</p>
                         <p class="font-medium text-gray-900 dark:text-gray-100">{{ $paper->authors ?: 'Unknown' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Year</p>
+                        <p class="muted">Year</p>
                         <p class="font-medium text-gray-900 dark:text-gray-100">{{ $paper->year ?: 'n.d.' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Venue</p>
+                        <p class="muted">Venue</p>
                         <p class="font-medium text-gray-900 dark:text-gray-100">{{ $paper->venue ?: '—' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">DOI / source</p>
+                        <p class="muted">DOI / source</p>
                         {{-- A paper imported from a link may have no DOI at all,
                              so the stored URL is offered as the fallback. --}}
                         @if($paper->doi)
@@ -113,7 +113,7 @@
 
                 <!-- Abstract -->
                 <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Abstract</h3>
+                    <h3 class="section-title mb-2">Abstract</h3>
                     <p class="text-gray-700 dark:text-gray-300 whitespace-pre-line text-justify">
                         {{ $paper->abstract ?: 'No abstract recorded for this paper.' }}
                     </p>
@@ -123,7 +123,7 @@
                 <div class="flex gap-3 mt-8 border-t border-gray-200 dark:border-gray-700 pt-6 flex-wrap items-center">
                     @if($paper->hasPdf())
                         <a href="{{ route('papers.read', $paper) }}"
-                           class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                           class="btn btn-md btn-primary">
                             Read PDF in browser
                         </a>
                     @else
@@ -133,17 +133,17 @@
                     @endif
 
                     <a href="{{ route('papers.edit', $paper) }}"
-                       class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                       class="btn btn-md bg-green-600 text-white shadow-sm hover:bg-green-700">
                         Edit details
                     </a>
 
                     <span class="text-sm text-gray-500 dark:text-gray-400 ml-auto">Cite as:</span>
                     <a href="{{ route('papers.export', ['paper' => $paper, 'format' => 'bibtex']) }}"
-                       class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">BibTeX</a>
+                       class="link text-sm">BibTeX</a>
                     <a href="{{ route('papers.export', ['paper' => $paper, 'format' => 'apa']) }}"
-                       class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">APA</a>
+                       class="link text-sm">APA</a>
                     <a href="{{ route('papers.export', ['paper' => $paper, 'format' => 'text']) }}"
-                       class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Text</a>
+                       class="link text-sm">Text</a>
 
                     <form method="POST" action="{{ route('papers.destroy', $paper) }}"
                           onsubmit="return confirm('Delete this paper and its PDF? This cannot be undone.')">
@@ -178,7 +178,7 @@
                     <form method="POST" action="{{ route('papers.reindex', $paper) }}">
                         @csrf
                         <button type="submit"
-                                class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                class="btn btn-sm btn-secondary">
                             Index now
                         </button>
                     </form>
@@ -220,7 +220,7 @@
                             </p>
                         </div>
                     @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             No notes yet — write your first one below. Markdown is supported.
                         </p>
                     @endforelse
@@ -254,7 +254,7 @@
                  Distinct from notes above: a note is private working material,
                  a comment is addressed to whoever else can see this paper. --}}
             <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6 mt-6">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                <h2 class="section-title mb-4">
                     Discussion ({{ $comments->count() }})
                 </h2>
 
@@ -262,7 +262,7 @@
                     @forelse ($comments as $comment)
                         <x-comment :comment="$comment" :paper="$paper" :can-reply="$canComment" />
                     @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             No comments yet. Collaborators on any collection holding this paper can join in.
                         </p>
                     @endforelse

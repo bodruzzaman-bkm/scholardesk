@@ -16,26 +16,26 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-6 sm:-my-px sm:ms-8 lg:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                    <x-nav-link icon="home" :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('app.dashboard') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('papers.index')" :active="request()->routeIs('papers.*')">
+                    <x-nav-link icon="library" :href="route('papers.index')" :active="request()->routeIs('papers.*')">
                         {{ __('app.library') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('collections.index')" :active="request()->routeIs('collections.*')">
+                    <x-nav-link icon="collection" :href="route('collections.index')" :active="request()->routeIs('collections.*')">
                         {{ __('app.collections') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
+                    <x-nav-link icon="tag" :href="route('tags.index')" :active="request()->routeIs('tags.*')">
                         {{ __('app.tags') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('search')" :active="request()->routeIs('search')">
+                    <x-nav-link icon="search" :href="route('search')" :active="request()->routeIs('search')">
                         {{ __('app.search') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('analytics')" :active="request()->routeIs('analytics')">
+                    <x-nav-link icon="chart" :href="route('analytics')" :active="request()->routeIs('analytics')">
                         {{ __('app.analytics') }}
                     </x-nav-link>
                     @if (auth()->user()?->isAdmin())
-                        <x-nav-link :href="route('admin.index')" :active="request()->routeIs('admin.*')">
+                        <x-nav-link icon="shield" :href="route('admin.index')" :active="request()->routeIs('admin.*')">
                             {{ __('app.admin') }}
                         </x-nav-link>
                     @endif
@@ -108,29 +108,29 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden lg:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+            <x-responsive-nav-link icon="home" :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('app.dashboard') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('papers.index')" :active="request()->routeIs('papers.*')">
+            <x-responsive-nav-link icon="library" :href="route('papers.index')" :active="request()->routeIs('papers.*')">
                 {{ __('app.library') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('collections.index')" :active="request()->routeIs('collections.*')">
+            <x-responsive-nav-link icon="collection" :href="route('collections.index')" :active="request()->routeIs('collections.*')">
                 {{ __('app.collections') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
+            <x-responsive-nav-link icon="tag" :href="route('tags.index')" :active="request()->routeIs('tags.*')">
                 {{ __('app.tags') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('search')" :active="request()->routeIs('search')">
+            <x-responsive-nav-link icon="search" :href="route('search')" :active="request()->routeIs('search')">
                 {{ __('app.search') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('analytics')" :active="request()->routeIs('analytics')">
+            <x-responsive-nav-link icon="chart" :href="route('analytics')" :active="request()->routeIs('analytics')">
                 {{ __('app.analytics') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
+            <x-responsive-nav-link icon="bell" :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
                 {{ __('app.notifications') }} @if ($unreadCount > 0) ({{ $unreadCount }}) @endif
             </x-responsive-nav-link>
             @if (auth()->user()?->isAdmin())
-                <x-responsive-nav-link :href="route('admin.index')" :active="request()->routeIs('admin.*')">
+                <x-responsive-nav-link icon="shield" :href="route('admin.index')" :active="request()->routeIs('admin.*')">
                     {{ __('app.admin') }}
                 </x-responsive-nav-link>
             @endif

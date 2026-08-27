@@ -89,7 +89,7 @@
                                     ? 'border-purple-600 text-purple-800 dark:text-purple-200'
                                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
                                 class="flex-1 px-4 py-3 text-sm font-semibold border-b-2 transition">
-                            ✨ AI assistant
+                            <x-icon name="sparkles" class="w-4 h-4 inline-block -mt-0.5" /> AI assistant
                         </button>
                     </div>
                 </div>

@@ -12,8 +12,9 @@
     a single mis-click.
 --}}
 <details {{ $attributes->merge(['class' => 'inline-block text-left']) }}>
-    <summary class="text-xs text-gray-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer list-none">
-        ⚑ {{ __('app.report') }}
+    <summary class="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer list-none transition-colors">
+        <x-icon name="flag" class="w-3.5 h-3.5" />
+        {{ __('app.report') }}
     </summary>
 
     <form method="POST" action="{{ route('reports.store') }}" class="mt-2 w-64 p-3 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">

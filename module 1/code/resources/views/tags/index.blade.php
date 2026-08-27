@@ -11,8 +11,8 @@
             <x-flash />
 
             {{-- Create --}}
-            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Create a tag</h3>
+            <div class="card card-body">
+                <h3 class="section-title mb-4">Create a tag</h3>
 
                 <form method="POST" action="{{ route('tags.store') }}" class="flex items-end gap-4 flex-wrap">
                     @csrf
@@ -52,7 +52,7 @@
                                    aria-label="Name for {{ $tag->name }}" />
 
                             <button type="submit"
-                                    class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                    class="btn btn-sm btn-secondary">
                                 Save
                             </button>
                         </form>
@@ -76,12 +76,9 @@
                         </div>
                     @endif
                 @empty
-                    <div class="p-12 text-center">
-                        <p class="text-gray-600 dark:text-gray-300 font-medium">No tags yet.</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Create one above, then apply it from any paper's edit page.
-                        </p>
-                    </div>
+                    <x-empty-state icon="tag"
+                                   title="No tags yet."
+                                   description="Create one above, then apply it from any paper's edit page." />
                 @endforelse
             </div>
         </div>

@@ -14,8 +14,8 @@
 
                 <!-- Create -->
                 <div class="md:col-span-1">
-                    <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Create a collection</h3>
+                    <div class="card card-body">
+                        <h3 class="section-title mb-4">Create a collection</h3>
                         <form method="POST" action="{{ route('collections.store') }}">
                             @csrf
                             <div>
@@ -100,7 +100,7 @@
                             </ul>
                             <p class="text-xs text-gray-400 mt-4">
                                 You can already ask across your entire library from the
-                                <a href="{{ route('dashboard') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">dashboard</a>.
+                                <a href="{{ route('dashboard') }}" class="link">dashboard</a>.
                             </p>
                         </div>
                     @endforelse

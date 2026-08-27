@@ -48,12 +48,9 @@
 
                     @if ($loop->last) </ul> @endif
                 @empty
-                    <div class="p-12 text-center">
-                        <p class="text-gray-600 dark:text-gray-300 font-medium">No notifications.</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            You'll be told when someone shares a collection with you or comments on one.
-                        </p>
-                    </div>
+                    <x-empty-state icon="bell"
+                                   title="No notifications."
+                                   description="You'll be told when someone shares a collection with you or comments on one." />
                 @endforelse
             </div>
 

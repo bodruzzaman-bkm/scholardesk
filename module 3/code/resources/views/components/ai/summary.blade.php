@@ -10,7 +10,7 @@
      x-data="aiSummary({ url: @js(route('ai.paper.summary', $paper)), indexed: @js($paper->isIndexed()) })">
 
     <h2 class="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-3 flex items-center gap-2">
-        <span aria-hidden="true">✨</span> AI summary
+        <x-icon name="sparkles" class="w-4 h-4 text-indigo-500 shrink-0" /> AI summary
     </h2>
 
     @unless ($configured)

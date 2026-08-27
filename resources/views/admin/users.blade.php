@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('app.admin') }} — users
             </h2>
-            <a href="{{ route('admin.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+            <a href="{{ route('admin.index') }}" class="link text-sm">
                 &larr; Overview
             </a>
         </div>
@@ -18,7 +18,7 @@
             <form method="GET" action="{{ route('admin.users') }}" class="flex gap-2">
                 <label for="q" class="sr-only">Search users</label>
                 <input id="q" type="search" name="q" value="{{ request('q') }}" placeholder="Search by name or email"
-                       class="flex-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                       class="field flex-1">
                 <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm">Search</button>
             </form>
 

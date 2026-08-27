@@ -5,9 +5,9 @@
                 {{ __('app.admin') }} — system overview
             </h2>
             <div class="flex gap-3 text-sm">
-                <a href="{{ route('admin.users') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Users</a>
-                <a href="{{ route('admin.comments') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Moderation</a>
-                <a href="{{ route('admin.reports') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                <a href="{{ route('admin.users') }}" class="link">Users</a>
+                <a href="{{ route('admin.comments') }}" class="link">Moderation</a>
+                <a href="{{ route('admin.reports') }}" class="link">
                     Reports @if ($stats['open_reports'] > 0)<span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">{{ $stats['open_reports'] }}</span>@endif
                 </a>
             </div>
@@ -30,8 +30,8 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {{-- Retrieval health --}}
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Index &amp; storage</h3>
+                <div class="card card-body">
+                    <h3 class="section-title mb-4">Index &amp; storage</h3>
                     <dl class="space-y-3 text-sm">
                         <div class="flex justify-between">
                             <dt class="text-gray-500 dark:text-gray-400">Papers with an indexed PDF</dt>
@@ -69,8 +69,8 @@
                 </div>
 
                 {{-- Most active researchers --}}
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Most papers</h3>
+                <div class="card card-body">
+                    <h3 class="section-title mb-4">Most papers</h3>
                     @forelse ($topUsers as $user)
                         @if ($loop->first) <ul class="divide-y divide-gray-100 dark:divide-gray-700"> @endif
                         <li class="py-2 flex justify-between items-center text-sm">
@@ -79,7 +79,7 @@
                         </li>
                         @if ($loop->last) </ul> @endif
                     @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">No users yet.</p>
+                        <p class="muted">No users yet.</p>
                     @endforelse
 
                     <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-6 mb-2">Newest accounts</h4>

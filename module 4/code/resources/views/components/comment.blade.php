@@ -58,8 +58,8 @@
                     @csrf
                     @method('PUT')
                     <textarea name="content" rows="2" required maxlength="5000"
-                              class="block w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-md shadow-sm">{{ $comment->content }}</textarea>
-                    <button type="submit" class="mt-2 px-3 py-1 text-xs bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 rounded-md">Save</button>
+                              class="field">{{ $comment->content }}</textarea>
+                    <button type="submit" class="btn btn-sm bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 mt-2">Save</button>
                 </form>
             </details>
         @endunless
@@ -81,8 +81,8 @@
                 @csrf
                 <input type="hidden" name="parent_id" value="{{ $comment->id }}">
                 <textarea name="content" rows="2" required maxlength="5000" placeholder="Write a reply…"
-                          class="block w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-md shadow-sm"></textarea>
-                <button type="submit" class="mt-2 px-3 py-1 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Reply</button>
+                          class="field"></textarea>
+                <button type="submit" class="btn btn-sm btn-primary mt-2">Reply</button>
             </form>
         </details>
     @endif

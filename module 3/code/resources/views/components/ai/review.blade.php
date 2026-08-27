@@ -21,7 +21,7 @@
      x-init="init()">
 
     <h2 class="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1 flex items-center gap-2">
-        <span aria-hidden="true">📝</span> Literature review draft
+        <x-icon name="note" class="w-4 h-4 text-indigo-500 shrink-0" /> Literature review draft
     </h2>
 
     @unless ($configured)
@@ -43,7 +43,7 @@
                 <span x-text="selected.length"></span> of {{ $papers->count() }} selected
             </span>
             <div class="flex gap-2 text-xs">
-                <button type="button" @click="selectAll()" class="text-indigo-600 dark:text-indigo-400 hover:underline">All</button>
+                <button type="button" @click="selectAll()" class="link">All</button>
                 <button type="button" @click="selected = []" class="text-gray-500 dark:text-gray-400 hover:underline">None</button>
             </div>
         </div>

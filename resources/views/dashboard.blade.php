@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
+        <x-page-header :title="__('Dashboard')">
+            <a href="{{ route('papers.create') }}" class="btn btn-md btn-primary">
+                <x-icon name="plus" class="w-4 h-4" />
+                Add paper
+            </a>
+        </x-page-header>
     </x-slot>
 
     <div class="py-8">
@@ -12,12 +15,12 @@
 
             {{-- Headline stats --}}
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <x-stat-card label="Papers" :value="$stats['papers']" accent="indigo" :href="route('papers.index')" />
-                <x-stat-card label="Collections" :value="$stats['collections']" accent="green" :href="route('collections.index')" />
-                <x-stat-card label="Tags" :value="$stats['tags']" accent="purple" :href="route('tags.index')" />
+                <x-stat-card icon="library" label="Papers" :value="$stats['papers']" accent="indigo" :href="route('papers.index')" />
+                <x-stat-card icon="collection" label="Collections" :value="$stats['collections']" accent="green" :href="route('collections.index')" />
+                <x-stat-card icon="tag" label="Tags" :value="$stats['tags']" accent="purple" :href="route('tags.index')" />
                 {{-- Counts highlights AND notes; the old dashboard counted only
                      highlights while labelling the card "Highlights & notes". --}}
-                <x-stat-card label="Highlights &amp; notes" :value="$stats['highlights'] + $stats['notes']" accent="amber" />
+                <x-stat-card icon="highlight" label="Highlights &amp; notes" :value="$stats['highlights'] + $stats['notes']" accent="amber" />
             </div>
 
             {{-- Ask across the whole library. Placed on the dashboard because
@@ -62,14 +65,14 @@
                                 </span>
                                 @if ($continueReading->hasPdf())
                                     <a href="{{ route('papers.read', $continueReading) }}"
-                                       class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                                       class="btn btn-md btn-primary">
                                         Open reader &rarr;
                                     </a>
                                 @endif
                             </div>
                         </div>
                     @else
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             Nothing in progress. Set a paper's status to <em>Reading</em> and it will appear here.
                         </p>
                     @endif
@@ -87,15 +90,15 @@
                         </li>
                         @if ($loop->last) </ul> @endif
                     @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             No papers yet —
-                            <a href="{{ route('papers.create') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">add your first</a>.
+                            <a href="{{ route('papers.create') }}" class="link">add your first</a>.
                         </p>
                     @endforelse
                 </div>
 
                 {{-- Reading progress --}}
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                <div class="card card-body">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
                         Reading progress
                     </h3>
@@ -129,8 +132,8 @@
 
             {{-- Tags + publication years --}}
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Most-used tags</h3>
+                <div class="card card-body">
+                    <h3 class="section-title mb-4">Most-used tags</h3>
                     @forelse ($topTags as $tag)
                         @if ($loop->first) <div class="space-y-2"> @endif
                         <a href="{{ route('papers.index', ['tag' => $tag->id]) }}" class="flex items-center gap-3 group">
@@ -142,17 +145,17 @@
                         </a>
                         @if ($loop->last) </div> @endif
                     @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             No tags in use yet —
-                            <a href="{{ route('tags.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">create one</a>.
+                            <a href="{{ route('tags.index') }}" class="link">create one</a>.
                         </p>
                     @endforelse
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Papers by publication year</h3>
+                <div class="card card-body">
+                    <h3 class="section-title mb-4">Papers by publication year</h3>
                     @if (empty($papersByYear))
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             No publication years recorded yet. Add a DOI and the year is fetched automatically.
                         </p>
                     @else

@@ -17,7 +17,7 @@
                     <label for="q" class="sr-only">Search</label>
                     <input id="q" type="search" name="q" value="{{ $query }}" autofocus
                            placeholder="{{ $mode === 'semantic' ? 'Describe an idea, e.g. “barriers to rural adoption”' : 'Words in the title, authors, abstract, venue or DOI' }}"
-                           class="flex-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                           class="field flex-1">
                     <button type="submit" class="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium transition">
                         Search
                     </button>
@@ -51,25 +51,25 @@
                 {{-- Filters only meaningfully apply to keyword mode. --}}
                 @if ($mode !== 'semantic')
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 border-t border-gray-200 dark:border-gray-700 pt-3">
-                        <select name="tag" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                        <select name="tag" class="field">
                             <option value="">All tags</option>
                             @foreach ($tags as $tag)
                                 <option value="{{ $tag->id }}" @selected(($filters['tag'] ?? null) == $tag->id)>{{ $tag->name }}</option>
                             @endforeach
                         </select>
-                        <select name="status" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                        <select name="status" class="field">
                             <option value="">Any status</option>
                             @foreach ($statuses as $value => $label)
                                 <option value="{{ $value }}" @selected(($filters['status'] ?? null) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
-                        <select name="year" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                        <select name="year" class="field">
                             <option value="">Any year</option>
                             @foreach ($years as $year)
                                 <option value="{{ $year }}" @selected(($filters['year'] ?? null) == $year)>{{ $year }}</option>
                             @endforeach
                         </select>
-                        <select name="author" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                        <select name="author" class="field">
                             <option value="">Any author</option>
                             @foreach ($authors as $author)
                                 <option value="{{ $author }}" @selected(($filters['author'] ?? null) === $author)>
@@ -77,7 +77,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <select name="collection" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
+                        <select name="collection" class="field">
                             <option value="">Any collection</option>
                             @foreach ($collections as $collection)
                                 <option value="{{ $collection->id }}" @selected(($filters['collection'] ?? null) == $collection->id)>{{ $collection->name }}</option>
@@ -141,7 +141,7 @@
                         <p class="text-gray-600 dark:text-gray-300 font-medium">No semantic matches.</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             Semantic search only covers papers whose PDF text has been indexed. Upload PDFs, or try
-                            <a href="{{ route('search', ['q' => $query, 'mode' => 'keyword']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">keyword search</a>.
+                            <a href="{{ route('search', ['q' => $query, 'mode' => 'keyword']) }}" class="link">keyword search</a>.
                         </p>
                     </div>
                 @endforelse
@@ -184,7 +184,7 @@
                         <p class="text-gray-600 dark:text-gray-300 font-medium">No papers matched “{{ $query }}”.</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             Try
-                            <a href="{{ route('search', ['q' => $query, 'mode' => 'semantic']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">semantic search</a>,
+                            <a href="{{ route('search', ['q' => $query, 'mode' => 'semantic']) }}" class="link">semantic search</a>,
                             which matches meaning rather than exact words.
                         </p>
                     </div>

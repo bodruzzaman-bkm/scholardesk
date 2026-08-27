@@ -11,7 +11,7 @@
             <x-flash />
 
             {{-- Language --}}
-            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+            <div class="card card-body">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ __('app.language') }}</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">
                     Changes the interface language. Your papers, notes and comments are always shown as written.
@@ -37,7 +37,7 @@
             </div>
 
             {{-- AI status: honest about what is and is not available. --}}
-            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+            <div class="card card-body">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ __('app.ai_assistant') }}</h3>
 
                 @if ($aiConfigured)
@@ -71,7 +71,7 @@
             </div>
 
             {{-- Account --}}
-            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+            <div class="card card-body">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Account</h3>
                 <dl class="mt-3 text-sm space-y-2">
                     <div class="flex justify-between">

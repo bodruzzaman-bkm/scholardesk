@@ -14,7 +14,7 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('app.analytics') }}
             </h2>
-            <a href="{{ route('papers.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+            <a href="{{ route('papers.index') }}" class="link text-sm">
                 {{ __('app.my_library') }} &rarr;
             </a>
         </div>
@@ -25,22 +25,22 @@
 
             {{-- Headline counts --}}
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <x-stat-card :label="__('app.papers')" :value="$stats['papers']" />
-                <x-stat-card :label="__('app.collections')" :value="$stats['collections']" />
-                <x-stat-card :label="__('app.tags')" :value="$stats['tags']" />
-                <x-stat-card :label="__('app.highlights_and_notes')" :value="$stats['highlights'] + $stats['notes']" />
+                <x-stat-card icon="library" :label="__('app.papers')" :value="$stats['papers']" accent="indigo" />
+                <x-stat-card icon="collection" :label="__('app.collections')" :value="$stats['collections']" accent="green" />
+                <x-stat-card icon="tag" :label="__('app.tags')" :value="$stats['tags']" accent="purple" />
+                <x-stat-card icon="highlight" :label="__('app.highlights_and_notes')" :value="$stats['highlights'] + $stats['notes']" accent="amber" />
             </div>
 
             {{-- 1. Papers added over time --}}
-            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            <div class="card card-body">
+                <h3 class="section-title mb-4">
                     Papers added over time
                 </h3>
 
                 @php($maxMonth = $addedByMonth ? max($addedByMonth) : 0)
 
                 @if ($maxMonth === 0)
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                    <p class="muted">
                         Nothing added in the last 12 months.
                     </p>
                 @else
@@ -66,13 +66,13 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 {{-- 2. By publication year --}}
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                <div class="card card-body">
+                    <h3 class="section-title mb-4">
                         By publication year
                     </h3>
 
                     @if (empty($papersByYear))
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             No papers with a year yet.
                         </p>
                     @else
@@ -94,13 +94,13 @@
 
                 {{-- 3. By venue — the breakdown requirement 21 named that the
                      dashboard never had. --}}
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                <div class="card card-body">
+                    <h3 class="section-title mb-4">
                         By venue
                     </h3>
 
                     @if (empty($papersByVenue))
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             No papers with a venue yet. Importing by DOI usually fills this in.
                         </p>
                     @else
@@ -122,8 +122,8 @@
                 </div>
 
                 {{-- 4. By tag --}}
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                <div class="card card-body">
+                    <h3 class="section-title mb-4">
                         By tag
                     </h3>
 
@@ -133,25 +133,25 @@
                                   style="background-color: {{ $tag->color }}; color: {{ $tag->contrastingTextColor() }}">
                                 {{ $tag->name }}
                             </span>
-                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ $tag->papers_count }}</span>
+                            <span class="muted">{{ $tag->papers_count }}</span>
                         </div>
                     @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             No tags in use yet.
                         </p>
                     @endforelse
                 </div>
 
                 {{-- 5. By reading status --}}
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                <div class="card card-body">
+                    <h3 class="section-title mb-4">
                         By reading status
                     </h3>
 
                     @php($totalPapers = array_sum($readingStatus))
 
                     @if ($totalPapers === 0)
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="muted">
                             No papers yet.
                         </p>
                     @else

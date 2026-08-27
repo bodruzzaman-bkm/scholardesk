@@ -13,7 +13,7 @@
      x-init="load()">
 
     <h2 class="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-3 flex items-center gap-2">
-        <span aria-hidden="true">🔗</span> Related in your library
+        <x-icon name="link" class="w-4 h-4 text-indigo-500 shrink-0" /> Related in your library
     </h2>
 
     <p x-show="loading" x-cloak class="text-xs text-gray-500 dark:text-gray-400">Loading…</p>

@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('app.admin') }} — moderation
             </h2>
-            <a href="{{ route('admin.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+            <a href="{{ route('admin.index') }}" class="link text-sm">
                 &larr; Overview
             </a>
         </div>
@@ -15,7 +15,7 @@
 
             <x-flash />
 
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="muted">
                 Hiding a comment leaves a tombstone in the thread so replies keep their context, and can be undone.
             </p>
 
@@ -32,11 +32,11 @@
                                      to a paper alone. Linking collection_id unconditionally
                                      threw a routing error on every paper-only comment. --}}
                                 @if ($comment->collection)
-                                    <a href="{{ route('collections.show', $comment->collection) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                    <a href="{{ route('collections.show', $comment->collection) }}" class="link">
                                         {{ $comment->collection->name }}
                                     </a>
                                 @elseif ($comment->paper)
-                                    <a href="{{ route('papers.show', $comment->paper) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                    <a href="{{ route('papers.show', $comment->paper) }}" class="link">
                                         {{ Str::limit($comment->paper->title, 60) }}
                                     </a>
                                 @else
@@ -59,7 +59,7 @@
                                 @csrf
                                 @method('PATCH')
                                 <button type="submit"
-                                        class="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                        class="btn btn-sm btn-secondary w-full">
                                     {{ $comment->is_hidden ? 'Restore' : 'Hide' }}
                                 </button>
                             </form>
@@ -77,9 +77,7 @@
 
                     @if ($loop->last) </ul> @endif
                 @empty
-                    <div class="p-12 text-center">
-                        <p class="text-gray-600 dark:text-gray-300 font-medium">No comments anywhere yet.</p>
-                    </div>
+                    <x-empty-state icon="chat" title="No comments anywhere yet." />
                 @endforelse
             </div>
 

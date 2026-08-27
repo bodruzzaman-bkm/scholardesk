@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Edit paper details') }}
             </h2>
-            <a href="{{ route('papers.show', $paper) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+            <a href="{{ route('papers.show', $paper) }}" class="link text-sm">
                 &larr; Back to paper
             </a>
         </div>
@@ -73,8 +73,8 @@
                         <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Add to collections</h3>
                             @if($collections->isEmpty())
-                                <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    No collections yet — <a href="{{ route('collections.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">create one</a>.
+                                <p class="muted">
+                                    No collections yet — <a href="{{ route('collections.index') }}" class="link">create one</a>.
                                 </p>
                             @else
                                 @php($selectedCollections = old('collections', $paper->collections->pluck('id')->all()))
@@ -97,9 +97,9 @@
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Apply tags</h3>
 
                             @if($tags->isEmpty())
-                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                <p class="muted">
                                     No tags yet — create one below or on the
-                                    <a href="{{ route('tags.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">tags page</a>.
+                                    <a href="{{ route('tags.index') }}" class="link">tags page</a>.
                                 </p>
                             @else
                                 @php($selectedTags = old('tags', $paper->tags->pluck('id')->all()))
@@ -126,7 +126,7 @@
 
                     <!-- Create a new tag (outside the paper form — HTML forbids nested forms) -->
                     <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Create a new tag</h3>
+                        <h3 class="section-title mb-4">Create a new tag</h3>
                         <form method="POST" action="{{ route('tags.store') }}" class="flex items-end gap-4 flex-wrap">
                             @csrf
                             <div>

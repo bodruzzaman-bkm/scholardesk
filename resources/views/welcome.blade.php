@@ -3,102 +3,146 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ config('app.name', 'ScholarDesk') }} - Your Personal Academic Library</title>
-        
-        <!-- Fonts -->
+        <title>{{ config('app.name', 'ScholarDesk') }} — An AI-augmented research workspace</title>
+        <meta name="description" content="Collect, read, annotate and understand academic papers in one place. Import by DOI, read PDFs in the browser, and ask questions across your whole library.">
+
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
-        
-        <!-- Scripts (Tailwind via Vite) -->
+
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="antialiased bg-gray-50 dark:bg-gray-900 selection:bg-indigo-500 selection:text-white font-sans text-gray-900 dark:text-gray-100">
-        
-        <!-- Navbar -->
-        <nav class="absolute top-0 w-full p-6 flex justify-between items-center z-10">
-            <div class="font-bold text-2xl text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                {{ config('app.name', 'ScholarDesk') }}
-            </div>
-            
-            <div class="space-x-4 font-semibold">
+    <body class="antialiased bg-white dark:bg-gray-900 selection:bg-indigo-500 selection:text-white font-sans text-gray-900 dark:text-gray-100">
+
+        <header class="sticky top-0 z-20 backdrop-blur bg-white/80 dark:bg-gray-900/80 border-b border-gray-200/70 dark:border-gray-800">
+            <nav class="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
+                <a href="/" class="flex items-center gap-2 font-bold text-lg text-gray-900 dark:text-gray-100">
+                    <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                        <x-icon name="library" class="w-5 h-5" />
+                    </span>
+                    {{ config('app.name', 'ScholarDesk') }}
+                </a>
+
                 @if (Route::has('login'))
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400">Dashboard</a>
-                    @else
-                        <a href="{{ route('login') }}" class="text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400">Log in</a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition shadow-sm">Register</a>
-                        @endif
-                    @endauth
+                    <div class="flex items-center gap-2">
+                        @auth
+                            <a href="{{ url('/dashboard') }}" class="btn btn-md btn-primary">Go to dashboard</a>
+                        @else
+                            <a href="{{ route('login') }}" class="btn btn-md btn-ghost">Log in</a>
+                            @if (Route::has('register'))
+                                <a href="{{ route('register') }}" class="btn btn-md btn-primary">Get started</a>
+                            @endif
+                        @endauth
+                    </div>
                 @endif
-            </div>
-        </nav>
+            </nav>
+        </header>
 
-        <!-- Hero Section -->
-        <div class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden flex items-center justify-center min-h-screen">
-            <!-- Background Decoration -->
-            <div class="absolute inset-y-0 w-full h-full -z-10 opacity-30 dark:opacity-20" style="background-image: radial-gradient(#4f46e5 1px, transparent 1px); background-size: 32px 32px;"></div>
-            
-            <div class="max-w-7xl mx-auto px-6 text-center">
-                <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
-                    Smart Paper Management <br> for <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-600">Modern Researchers</span>
-                </h1>
-                <p class="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10">
-                    Organize your academic papers, fetch metadata instantly via DOI, read PDFs directly in your browser, and save color-coded margin notes that persist forever.
+        {{-- Hero --}}
+        <section class="relative overflow-hidden">
+            {{-- A soft radial wash rather than a dot grid: the grid read as a
+                 placeholder texture behind the headline. --}}
+            <div class="pointer-events-none absolute inset-0 -z-10
+                        bg-[radial-gradient(60%_50%_at_50%_0%,theme(colors.indigo.100),transparent_70%)]
+                        dark:bg-[radial-gradient(60%_50%_at_50%_0%,theme(colors.indigo.950),transparent_70%)]"></div>
+
+            <div class="max-w-4xl mx-auto px-6 pt-20 pb-16 sm:pt-28 sm:pb-24 text-center">
+                <p class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium
+                          bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300 mb-6">
+                    <x-icon name="sparkles" class="w-3.5 h-3.5" />
+                    Answers grounded in your own papers
                 </p>
-                <div class="flex justify-center gap-4">
+
+                <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.05]">
+                    Your research library,<br class="hidden sm:block">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400">
+                        that answers questions
+                    </span>
+                </h1>
+
+                <p class="mt-6 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                    Collect papers by DOI or link, read and annotate them in the browser, and ask
+                    questions across everything you have read — with every answer citing the paper
+                    it came from.
+                </p>
+
+                <div class="mt-9 flex flex-wrap justify-center gap-3">
                     @auth
-                        <a href="{{ url('/dashboard') }}" class="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition shadow-lg hover:shadow-indigo-500/30 text-lg">Go to Dashboard &rarr;</a>
+                        <a href="{{ url('/dashboard') }}" class="btn btn-lg btn-primary">
+                            Go to your dashboard
+                            <x-icon name="external" class="w-4 h-4" />
+                        </a>
                     @else
-                        <a href="{{ route('register') }}" class="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition shadow-lg hover:shadow-indigo-500/30 text-lg">Start for Free</a>
-                        <a href="{{ route('login') }}" class="px-8 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm text-lg">Sign In</a>
+                        <a href="{{ route('register') }}" class="btn btn-lg btn-primary">Create a free account</a>
+                        <a href="{{ route('login') }}" class="btn btn-lg btn-secondary">Sign in</a>
                     @endauth
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Features Section -->
-        <div class="bg-white dark:bg-gray-800 py-24">
-            <div class="max-w-7xl mx-auto px-6">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl font-bold">Everything you need for your literature review</h2>
+        {{-- Features --}}
+        <section class="border-t border-gray-200/70 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/40">
+            <div class="max-w-6xl mx-auto px-6 py-20">
+                <div class="text-center max-w-2xl mx-auto mb-14">
+                    <h2 class="text-3xl font-bold tracking-tight">Everything a literature review needs</h2>
+                    <p class="mt-3 text-gray-600 dark:text-gray-400">
+                        From the moment you find a paper to the moment you cite it.
+                    </p>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-                    <!-- Feature 1 -->
-                    <div class="text-center">
-                        <div class="w-16 h-16 mx-auto bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl flex items-center justify-center mb-6 text-indigo-600 dark:text-indigo-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-bold mb-3">DOI Auto-Fetch</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Add papers in seconds. Just paste a DOI and we will fetch the title, authors, venue, and year automatically.</p>
-                    </div>
-                    
-                    <!-- Feature 2 -->
-                    <div class="text-center">
-                        <div class="w-16 h-16 mx-auto bg-purple-100 dark:bg-purple-900/50 rounded-2xl flex items-center justify-center mb-6 text-purple-600 dark:text-purple-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-bold mb-3">Collections & Tags</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Keep your library organized. Group papers into named collections and use color-coded tags for easy filtering.</p>
-                    </div>
 
-                    <!-- Feature 3 -->
-                    <div class="text-center">
-                        <div class="w-16 h-16 mx-auto bg-yellow-100 dark:bg-yellow-900/50 rounded-2xl flex items-center justify-center mb-6 text-yellow-600 dark:text-yellow-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    @php
+                        $features = [
+                            ['search',      'indigo', 'Import by DOI or link',   'Paste a DOI or an article URL and the title, authors, year, venue and abstract arrive with it. Open-access PDFs download automatically.'],
+                            ['book-open',   'violet', 'Read and annotate',       'A PDF reader in the browser with coloured highlights and margin notes that survive a reload, a new session and a change of zoom.'],
+                            ['sparkles',    'amber',  'Ask your library',        'Ask a question across every paper you own. Answers are built only from your own text, and cite the papers they drew on.'],
+                            ['chart',       'green',  'See the shape of it',     'Papers added over time, and breakdowns by year, venue, tag and reading status.'],
+                            ['users',       'blue',   'Work together',           'Share a collection as Editor or Viewer, comment in threads, and follow an activity feed of what changed.'],
+                            ['document',    'rose',   'Cite and export',         'BibTeX, APA and plain text for one paper or a whole collection — or the entire collection as one archive with its PDFs.'],
+                        ];
+                        // Full class strings so Tailwind's scanner keeps them.
+                        $chips = [
+                            'indigo' => 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400',
+                            'violet' => 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400',
+                            'amber'  => 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400',
+                            'green'  => 'bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400',
+                            'blue'   => 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400',
+                            'rose'   => 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400',
+                        ];
+                    @endphp
+
+                    @foreach ($features as [$icon, $accent, $title, $body])
+                        <div class="card card-body">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4 {{ $chips[$accent] }}">
+                                <x-icon :name="$icon" class="w-5 h-5" />
+                            </div>
+                            <h3 class="font-semibold text-gray-900 dark:text-gray-100">{{ $title }}</h3>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{{ $body }}</p>
                         </div>
-                        <h3 class="text-xl font-bold mb-3">Built-in PDF Reader</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Read PDFs right in the browser. Highlight important text and add permanent margin notes linked to the exact page.</p>
-                    </div>
+                    @endforeach
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Footer -->
-        <footer class="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-8 text-center text-gray-500 dark:text-gray-400 text-sm">
-            <p>&copy; {{ date('Y') }} {{ config('app.name', 'ScholarDesk') }}. Built with Laravel for academic research.</p>
+        {{-- Closing call to action --}}
+        @guest
+            <section class="max-w-6xl mx-auto px-6 py-20">
+                <div class="card card-body sm:p-12 text-center">
+                    <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Start with one paper</h2>
+                    <p class="mt-3 text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+                        Upload a PDF or paste a DOI. Everything else — the reader, the search, the
+                        assistant — works from there.
+                    </p>
+                    <div class="mt-7">
+                        <a href="{{ route('register') }}" class="btn btn-lg btn-primary">Create a free account</a>
+                    </div>
+                </div>
+            </section>
+        @endguest
+
+        <footer class="border-t border-gray-200/70 dark:border-gray-800">
+            <div class="max-w-6xl mx-auto px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                &copy; {{ date('Y') }} {{ config('app.name', 'ScholarDesk') }} — built with Laravel for academic research.
+            </div>
         </footer>
 
     </body>

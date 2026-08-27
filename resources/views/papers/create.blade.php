@@ -25,7 +25,7 @@
             </div>
 
             {{-- Single paper: DOI lookup or one PDF, with editable metadata --}}
-            <div x-show="tab === 'single'" x-cloak class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+            <div x-show="tab === 'single'" x-cloak class="card card-body">
                 <form method="POST" action="{{ route('papers.store') }}" enctype="multipart/form-data">
                     @csrf
 
@@ -81,7 +81,7 @@
             </div>
 
             {{-- Bulk upload --}}
-            <div x-show="tab === 'batch'" x-cloak class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+            <div x-show="tab === 'batch'" x-cloak class="card card-body">
                 {{-- Limits come from PHP's own configuration, so the form can
                      never promise more than the server will accept. --}}
                 <form method="POST" action="{{ route('papers.storeBatch') }}" enctype="multipart/form-data"

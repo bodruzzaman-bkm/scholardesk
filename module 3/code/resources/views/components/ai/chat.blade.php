@@ -46,7 +46,7 @@
 
     <div class="flex items-center justify-between mb-3">
         <h2 class="font-semibold text-gray-900 dark:text-gray-100 text-sm flex items-center gap-2">
-            <span aria-hidden="true">💬</span> {{ $heading }}
+            <x-icon name="chat" class="w-4 h-4 text-indigo-500 shrink-0" /> {{ $heading }}
         </h2>
         <button type="button" x-show="messages.length" x-cloak @click="messages = []"
                 class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">

@@ -15,7 +15,7 @@
                     </span>
                 @endif
             </h2>
-            <a href="{{ route('admin.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+            <a href="{{ route('admin.index') }}" class="link text-sm">
                 &larr; {{ __('app.admin') }}
             </a>
         </div>
@@ -38,7 +38,7 @@
                 @endforeach
             </div>
 
-            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden">
+            <div class="card overflow-hidden">
                 <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                     @forelse ($reports as $report)
                         <li class="p-4">
@@ -81,7 +81,7 @@
                                             </div>
                                         @elseif ($report->reportable instanceof \App\Models\Paper)
                                             <a href="{{ route('papers.show', $report->reportable) }}"
-                                               class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                                               class="link text-sm">
                                                 {{ Str::limit($report->reportable->title, 100) }}
                                             </a>
                                         @else
@@ -106,7 +106,7 @@
                                             @csrf @method('PATCH')
                                             <input type="hidden" name="status" value="resolved">
                                             <button type="submit"
-                                                    class="w-full px-3 py-1 text-xs rounded-md bg-green-600 text-white hover:bg-green-700">
+                                                    class="btn btn-sm w-full bg-green-600 text-white shadow-sm hover:bg-green-700">
                                                 Resolve
                                             </button>
                                         </form>
@@ -114,7 +114,7 @@
                                             @csrf @method('PATCH')
                                             <input type="hidden" name="status" value="dismissed">
                                             <button type="submit"
-                                                    class="w-full px-3 py-1 text-xs rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600">
+                                                    class="btn btn-sm btn-secondary w-full">
                                                 Dismiss
                                             </button>
                                         </form>
