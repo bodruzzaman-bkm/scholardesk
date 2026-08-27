@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CollectionController extends Controller
 {
@@ -178,16 +179,22 @@ class CollectionController extends Controller
     }
 
     /** Download the whole collection as one Markdown document. */
-    public function bundle(Collection $collection, ExportService $exports): Response
+    public function bundle(Collection $collection, ExportService $exports): BinaryFileResponse
     {
         $this->authorize('view', $collection);
 
-        $bundle = $exports->collectionBundle($collection, request()->user());
+        // Requirement 16 asks for "its papers, notes, and a formatted
+        // bibliography, as a single downloadable file" — so the PDFs travel
+        // with it, which means an archive rather than a Markdown document.
+        $archive = $exports->collectionArchive($collection, request()->user());
 
-        return response($bundle['content'], 200, [
-            'Content-Type' => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="'.$bundle['filename'].'"',
-        ]);
+        return response()
+            ->download($archive['path'], $archive['filename'], [
+                'Content-Type' => 'application/zip',
+            ])
+            // The zip is a temporary file; without this, storage/app/tmp grows
+            // by a full copy of the collection on every download.
+            ->deleteFileAfterSend(true);
     }
 
     /** Export every citation in this collection as one file. */

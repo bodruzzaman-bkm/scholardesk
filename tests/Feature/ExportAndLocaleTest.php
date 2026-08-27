@@ -46,6 +46,23 @@ class ExportAndLocaleTest extends TestCase
         return $collection;
     }
 
+    /** The markdown document inside the downloaded archive. */
+    private function bundleMarkdown(string $body, string $entry): string
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'zip');
+        file_put_contents($tmp, $body);
+
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($tmp) === true, 'The bundle is not a readable zip.');
+        $markdown = $zip->getFromName($entry);
+        $zip->close();
+        unlink($tmp);
+
+        $this->assertNotFalse($markdown, "The archive has no {$entry} entry.");
+
+        return $markdown;
+    }
+
     public function test_the_project_bundle_contains_metadata_notes_and_a_bibliography(): void
     {
         $user = User::factory()->create();
@@ -54,9 +71,12 @@ class ExportAndLocaleTest extends TestCase
         $response = $this->actingAs($user)
             ->get(route('collections.bundle', $collection))
             ->assertOk()
-            ->assertHeader('content-type', 'text/markdown; charset=UTF-8');
+            ->assertHeader('content-type', 'application/zip');
 
-        $body = $response->getContent();
+        // Requirement 16 wants "its papers, notes, and a formatted
+        // bibliography, as a single downloadable file" - so the download is an
+        // archive, and the document lives inside it.
+        $body = $this->bundleMarkdown($response->streamedContent(), 'thesis-chapter.md');
 
         $this->assertStringContainsString('# Thesis chapter', $body);
         $this->assertStringContainsString('Attention Is All You Need', $body);
@@ -73,7 +93,7 @@ class ExportAndLocaleTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('collections.bundle', $collection))
-            ->assertHeader('content-disposition', 'attachment; filename="thesis-chapter.md"');
+            ->assertHeader('content-disposition', 'attachment; filename=thesis-chapter.zip');
     }
 
     /** Notes are private to their author, even inside a shared collection. */
@@ -90,7 +110,7 @@ class ExportAndLocaleTest extends TestCase
         ]);
 
         $response = $this->actingAs($collaborator)->get(route('collections.bundle', $collection))->assertOk();
-        $body = $response->getContent();
+        $body = $this->bundleMarkdown($response->streamedContent(), 'thesis-chapter.md');
 
         // The owner's private note must not appear in a collaborator's export.
         $this->assertStringNotContainsString('Self-attention replaces recurrence.', $body);

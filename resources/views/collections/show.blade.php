@@ -243,10 +243,10 @@
                         <div class="space-y-2 text-sm">
                             <a href="{{ route('collections.bundle', $collection) }}"
                                class="block px-3 py-2 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition font-medium">
-                                📦 Full project bundle (.md)
+                                📦 Full project bundle (.zip)
                             </a>
                             <p class="text-xs text-gray-500 dark:text-gray-400 pb-2">
-                                Papers, your notes, bibliography and the latest review draft.
+                                The PDFs, your notes, a BibTeX bibliography and the latest review draft.
                             </p>
                             <div class="flex gap-3 text-sm border-t border-gray-200 dark:border-gray-700 pt-2">
                                 <span class="text-gray-500 dark:text-gray-400">Citations:</span>
