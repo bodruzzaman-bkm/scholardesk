@@ -7,6 +7,9 @@
             <div class="flex gap-3 text-sm">
                 <a href="{{ route('admin.users') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Users</a>
                 <a href="{{ route('admin.comments') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Moderation</a>
+                <a href="{{ route('admin.reports') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                    Reports @if ($stats['open_reports'] > 0)<span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">{{ $stats['open_reports'] }}</span>@endif
+                </a>
             </div>
         </div>
     </x-slot>
@@ -22,6 +25,7 @@
                 <x-stat-card label="Papers" :value="$stats['papers']" accent="green" />
                 <x-stat-card label="Collections" :value="$stats['collections']" accent="amber" />
                 <x-stat-card label="Comments" :value="$stats['comments']" accent="indigo" :href="route('admin.comments')" />
+                <x-stat-card label="Open reports" :value="$stats['open_reports']" accent="amber" :href="route('admin.reports')" />
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
