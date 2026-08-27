@@ -49,6 +49,19 @@ class PaperPolicy
         return $this->owns($user, $paper) || $this->sharedWith($user, $paper);
     }
 
+    /**
+     * Commenting follows read access, not annotate access.
+     *
+     * Highlights and notes are one person's private working material, so they
+     * stay with the owner. A comment is the opposite — it is addressed to the
+     * other people who can see the paper, which is exactly the collaborators
+     * on a collection containing it (requirement 18).
+     */
+    public function comment(User $user, Paper $paper): bool
+    {
+        return $this->owns($user, $paper) || $this->sharedWith($user, $paper);
+    }
+
     private function owns(User $user, Paper $paper): bool
     {
         return $user->id === $paper->user_id;

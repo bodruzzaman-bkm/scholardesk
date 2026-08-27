@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AiController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\CollectionMemberController;
 use App\Http\Controllers\CommentController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\NoteController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaperController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TagController;
@@ -35,6 +37,9 @@ Route::middleware('auth')->group(function () {
 
     // Search (keyword + semantic)
     Route::get('/search', [SearchController::class, 'index'])->name('search');
+
+    // Analytics dashboard (requirement 21)
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 
     /*
      | Papers / library
@@ -72,10 +77,14 @@ Route::middleware('auth')->group(function () {
     Route::patch('/collections/{collection}/members/{member}', [CollectionMemberController::class, 'update'])->name('collections.members.update');
     Route::delete('/collections/{collection}/members/{member}', [CollectionMemberController::class, 'destroy'])->name('collections.members.remove');
 
-    // Comments
+    // Comments — on a collection, or on a single paper (requirement 18)
     Route::post('/collections/{collection}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::post('/papers/{paper}/comments', [CommentController::class, 'storePaper'])->name('papers.comments.store');
     Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+    // Content reports (requirement 22)
+    Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -122,6 +131,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('/users/{user}/role', [AdminController::class, 'updateRole'])->name('users.role');
         Route::get('/comments', [AdminController::class, 'comments'])->name('comments');
         Route::patch('/comments/{comment}/visibility', [AdminController::class, 'toggleCommentVisibility'])->name('comments.visibility');
+        Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
+        Route::patch('/reports/{report}', [AdminController::class, 'resolveReport'])->name('reports.resolve');
     });
 });
 

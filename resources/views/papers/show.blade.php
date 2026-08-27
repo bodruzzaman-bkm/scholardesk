@@ -244,6 +244,46 @@
                 </form>
             </div>
 
+            @unless ($paper->user_id === auth()->id())
+                <div class="mt-6 text-right">
+                    <x-report-button type="paper" :id="$paper->id" />
+                </div>
+            @endunless
+
+            {{-- Discussion (requirement 18).
+                 Distinct from notes above: a note is private working material,
+                 a comment is addressed to whoever else can see this paper. --}}
+            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6 mt-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                    Discussion ({{ $comments->count() }})
+                </h2>
+
+                <div class="space-y-4">
+                    @forelse ($comments as $comment)
+                        <x-comment :comment="$comment" :paper="$paper" :can-reply="$canComment" />
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            No comments yet. Collaborators on any collection holding this paper can join in.
+                        </p>
+                    @endforelse
+                </div>
+
+                @if ($canComment)
+                    <form method="POST" action="{{ route('papers.comments.store', $paper) }}" class="mt-6">
+                        @csrf
+                        <label for="paper-comment" class="sr-only">Comment</label>
+                        <textarea id="paper-comment" name="content" rows="3" required maxlength="5000"
+                                  placeholder="Add a comment…"
+                                  class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"></textarea>
+                        <x-input-error :messages="$errors->get('content')" class="mt-2" />
+
+                        <div class="mt-3 text-right">
+                            <x-primary-button type="submit">Post comment</x-primary-button>
+                        </div>
+                    </form>
+                @endif
+            </div>
+
             </div>{{-- /left column --}}
 
             {{-- Right rail: AI assistance, one card per capability. Sticky so

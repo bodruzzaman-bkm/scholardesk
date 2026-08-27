@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ReportStatus;
 use App\Enums\UserRole;
 use App\Models\Collection;
 use App\Models\Comment;
@@ -9,10 +10,12 @@ use App\Models\Highlight;
 use App\Models\Note;
 use App\Models\Paper;
 use App\Models\PaperChunk;
+use App\Models\Report;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\View\View;
 
@@ -35,6 +38,7 @@ class AdminController extends Controller
                 'comments' => Comment::count(),
                 'indexed_papers' => Paper::where('index_status', 'indexed')->count(),
                 'chunks' => PaperChunk::count(),
+                'open_reports' => Report::query()->open()->count(),
                 'storage_mb' => round($this->storageBytes() / 1_048_576, 1),
             ],
             'recentUsers' => User::latest()->limit(5)->get(),
@@ -85,7 +89,7 @@ class AdminController extends Controller
     public function comments(): View
     {
         $comments = Comment::query()
-            ->with(['user:id,name', 'collection:id,name'])
+            ->with(['user:id,name', 'collection:id,name', 'paper:id,title'])
             ->latest()
             ->paginate(25);
 
@@ -101,6 +105,54 @@ class AdminController extends Controller
         $comment->update(['is_hidden' => ! $comment->is_hidden]);
 
         return back()->with('success', $comment->is_hidden ? 'Comment hidden.' : 'Comment restored.');
+    }
+
+    /**
+     * The report queue (requirement 22).
+     *
+     * Defaults to open reports, because that is the work. `?status=` switches
+     * to the resolved or dismissed history.
+     */
+    public function reports(Request $request): View
+    {
+        $status = $request->query('status', ReportStatus::Open->value);
+
+        $reports = Report::query()
+            ->withStatus($status)
+            ->with(['user:id,name', 'resolver:id,name', 'reportable'])
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('admin.reports', [
+            'reports' => $reports,
+            'status' => $status,
+            'openCount' => Report::query()->open()->count(),
+        ]);
+    }
+
+    /**
+     * Close a report as resolved or dismissed.
+     *
+     * Resolving does not itself hide the reported content — that stays a
+     * separate, deliberate action on the comment. An administrator can decide
+     * a report is valid and still leave the content up.
+     */
+    public function resolveReport(Request $request, Report $report): RedirectResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in([ReportStatus::Resolved->value, ReportStatus::Dismissed->value])],
+        ]);
+
+        $status = ReportStatus::from($validated['status']);
+
+        $report->update([
+            'status' => $status,
+            'resolved_by' => $request->user()->id,
+            'resolved_at' => now(),
+        ]);
+
+        return back()->with('success', "Report marked {$status->label()}.");
     }
 
     private function storageBytes(): int

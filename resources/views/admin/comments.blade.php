@@ -28,9 +28,20 @@
                             <p class="text-xs text-gray-500 dark:text-gray-400">
                                 <span class="font-medium text-gray-700 dark:text-gray-300">{{ $comment->user?->name ?? 'Unknown' }}</span>
                                 in
-                                <a href="{{ route('collections.show', $comment->collection_id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
-                                    {{ $comment->collection?->name ?? 'a collection' }}
-                                </a>
+                                {{-- A comment anchors to a collection or, since requirement 18,
+                                     to a paper alone. Linking collection_id unconditionally
+                                     threw a routing error on every paper-only comment. --}}
+                                @if ($comment->collection)
+                                    <a href="{{ route('collections.show', $comment->collection) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        {{ $comment->collection->name }}
+                                    </a>
+                                @elseif ($comment->paper)
+                                    <a href="{{ route('papers.show', $comment->paper) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        {{ Str::limit($comment->paper->title, 60) }}
+                                    </a>
+                                @else
+                                    <span class="italic">a deleted item</span>
+                                @endif
                                 · {{ $comment->created_at->diffForHumans() }}
                             </p>
                             <p class="mt-1 text-sm whitespace-pre-line {{ $comment->is_hidden ? 'italic text-gray-400' : 'text-gray-800 dark:text-gray-200' }}">

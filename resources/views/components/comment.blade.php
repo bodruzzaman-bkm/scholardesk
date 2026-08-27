@@ -1,9 +1,18 @@
 @props([
     'comment',
-    'collection',
+    // Exactly one of these anchors the thread. A collection thread passes
+    // :collection; a paper thread passes :paper. Requirement 18 needs both.
+    'collection' => null,
+    'paper' => null,
     'canReply' => false,
     'isReply' => false,
 ])
+
+@php
+    $replyAction = $paper
+        ? route('papers.comments.store', $paper)
+        : route('comments.store', $collection);
+@endphp
 
 <div {{ $attributes->merge(['class' => 'border border-gray-200 dark:border-gray-700 rounded-lg p-4 '.($isReply ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/40')]) }}>
     <div class="flex justify-between items-start gap-3">
@@ -17,8 +26,14 @@
             </p>
         </div>
 
-        {{-- Author-only controls; @can defers to CommentPolicy. --}}
-        <div class="flex gap-2 shrink-0">
+        {{-- Author-only controls; @can defers to CommentPolicy.
+             Reporting sits alongside but is open to anyone who can see the
+             comment — a moderation system only the author could use would be
+             no moderation system at all. --}}
+        <div class="flex gap-2 shrink-0 items-start">
+            @unless ($comment->user_id === auth()->id())
+                <x-report-button type="comment" :id="$comment->id" />
+            @endunless
             @can('delete', $comment)
                 <form method="POST" action="{{ route('comments.destroy', $comment) }}"
                       onsubmit="return confirm('Delete this comment?')">
@@ -54,7 +69,7 @@
     @if ($comment->replies->isNotEmpty())
         <div class="mt-3 ml-4 pl-4 border-l-2 border-gray-200 dark:border-gray-600 space-y-3">
             @foreach ($comment->replies as $reply)
-                <x-comment :comment="$reply" :collection="$collection" :can-reply="false" :is-reply="true" />
+                <x-comment :comment="$reply" :collection="$collection" :paper="$paper" :can-reply="false" :is-reply="true" />
             @endforeach
         </div>
     @endif
@@ -62,7 +77,7 @@
     @if ($canReply && ! $isReply)
         <details class="mt-3">
             <summary class="text-xs text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline">Reply</summary>
-            <form method="POST" action="{{ route('comments.store', $collection) }}" class="mt-2">
+            <form method="POST" action="{{ $replyAction }}" class="mt-2">
                 @csrf
                 <input type="hidden" name="parent_id" value="{{ $comment->id }}">
                 <textarea name="content" rows="2" required maxlength="5000" placeholder="Write a reply…"

@@ -62,7 +62,26 @@ class PaperController extends Controller
             // Previously persisted turns. They were already being written but
             // never read back, so reloading silently discarded the discussion.
             'chatHistory' => $this->chatHistoryFor($request->user()->id, $paper),
+            'comments' => $this->commentsFor($paper),
+            'canComment' => $request->user()->can('comment', $paper),
         ]);
+    }
+
+    /**
+     * Top-level comments on this paper, replies eager-loaded (requirement 18).
+     *
+     * roots() only, because the component renders replies through the parent;
+     * without it every reply would also appear as its own thread.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \App\Models\Comment>
+     */
+    private function commentsFor(Paper $paper)
+    {
+        return $paper->comments()
+            ->roots()
+            ->with(['user:id,name', 'replies.user:id,name'])
+            ->latest()
+            ->get();
     }
 
     /**
