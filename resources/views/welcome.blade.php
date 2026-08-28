@@ -52,10 +52,12 @@
                     Answers grounded in your own papers
                 </p>
 
-                <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.05]">
-                    Your research library,<br class="hidden sm:block">
+                <h1 class="text-5xl sm:text-7xl font-extrabold tracking-tight leading-[1.05]">
+                    {{-- The product name, deliberately literal rather than
+                         config('app.name'): APP_NAME is an operator setting and
+                         a stray value there would rename the headline. --}}
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400">
-                        that answers questions
+                        ScholarDesk
                     </span>
                 </h1>
 

@@ -12,6 +12,7 @@ primary_region = "sin"          # Singapore: closest Fly region to Bangladesh
   dockerfile = "Dockerfile"
 
 [env]
+  APP_NAME = "ScholarDesk"      # otherwise the browser tab reads "Laravel"
   APP_ENV = "production"
   APP_DEBUG = "false"
   LOG_CHANNEL = "stderr"        # Fly collects stdout/stderr; no log file to rotate
