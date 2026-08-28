@@ -61,10 +61,11 @@
                     </span>
                 </h1>
 
-                <p class="mt-6 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-                    Collect papers by DOI or link, read and annotate them in the browser, and ask
-                    questions across everything you have read — with every answer citing the paper
-                    it came from.
+                {{-- One line, three verbs — the product's three pillars in the
+                     order you meet them. The badge above already makes the
+                     grounding promise, so this does not repeat it. --}}
+                <p class="mt-6 text-xl sm:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-snug">
+                    Read, annotate, and question your entire research library.
                 </p>
 
                 <div class="mt-9 flex flex-wrap justify-center gap-3">
