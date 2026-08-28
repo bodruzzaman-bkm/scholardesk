@@ -130,10 +130,13 @@
         @guest
             <section class="max-w-6xl mx-auto px-6 py-20">
                 <div class="card card-body sm:p-12 text-center">
-                    <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Start with one paper</h2>
-                    <p class="mt-3 text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-                        Upload a PDF or paste a DOI. Everything else — the reader, the search, the
-                        assistant — works from there.
+                    <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">Start with one paper.</h2>
+                    {{-- The visitor has just read the feature grid, so this
+                         does not re-list it. It keeps the concrete first
+                         action — that is what a closing CTA is for — and lets
+                         "everything else follows" carry the rest. --}}
+                    <p class="mt-3 text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+                        Upload a PDF or paste a DOI. Everything else follows.
                     </p>
                     <div class="mt-7">
                         <a href="{{ route('register') }}" class="btn btn-lg btn-primary">Create a free account</a>
