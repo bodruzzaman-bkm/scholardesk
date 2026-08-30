@@ -1,0 +1,123 @@
+# ScholarDesk on Render — the free-tier deployment.
+#
+# Render's free web services have no persistent disk, so neither the SQLite
+# file nor the uploaded PDFs can live on the container. Both move off it:
+#
+#   database  -> a managed Postgres, created below
+#   PDFs      -> S3-compatible object storage (Cloudflare R2), set by hand
+#
+# Everything else — the Dockerfile, the entrypoint, the app — is shared with
+# the Fly deployment. The entrypoint reads DB_CONNECTION and FILESYSTEM_DISK
+# and skips the volume setup when they say Postgres and s3.
+#
+# Two things to know about the free tier before you demo:
+#   * a free service sleeps after inactivity, so the first request after a
+#     quiet spell takes ~30-60s to wake. Open the link a minute early.
+#   * free Postgres instances expire. Check the current term in the Render
+#     dashboard and plan a dump before it lapses.
+
+services:
+  - type: web
+    name: scholardesk
+    runtime: docker
+    plan: free
+    region: singapore          # nearest to Bangladesh; change if you prefer
+    dockerfilePath: ./Dockerfile
+
+    # Render sends traffic to $PORT, which the entrypoint honours.
+    healthCheckPath: /
+
+    envVars:
+      - key: APP_NAME
+        value: ScholarDesk
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: LOG_CHANNEL
+        value: stderr           # Render collects stdout/stderr
+
+      # Generated once by Render and then kept. Losing it makes every existing
+      # session and every encrypted column unreadable.
+      - key: APP_KEY
+        generateValue: true
+
+      # Set this to the service's own URL after the first deploy. Laravel uses
+      # it to build absolute links in notification emails and password resets.
+      - key: APP_URL
+        sync: false
+
+      # --- Database ------------------------------------------------------
+      - key: DB_CONNECTION
+        value: pgsql
+      # DB_URL, not DATABASE_URL: config/database.php reads env('DB_URL') for
+      # the pgsql connection, and Laravel parses the postgres:// string from it.
+      - key: DB_URL
+        fromDatabase:
+          name: scholardesk-db
+          property: connectionString
+
+      # Sessions, cache and queue all sit in the database, so they follow it
+      # to Postgres automatically.
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      # sync, not database: indexing runs inline, so there is no worker to run
+      # and no second service to pay for.
+      - key: QUEUE_CONNECTION
+        value: sync
+
+      # --- Uploaded PDFs -> object storage --------------------------------
+      # Set these by hand in the Render dashboard from your R2 bucket.
+      # Without them the app still boots, but uploads vanish on every restart.
+      - key: FILESYSTEM_DISK
+        value: s3
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_BUCKET
+        sync: false
+      - key: AWS_DEFAULT_REGION
+        value: auto             # R2 uses "auto"
+      - key: AWS_ENDPOINT
+        sync: false             # https://<account-id>.r2.cloudflarestorage.com
+      - key: AWS_URL
+        sync: false             # the bucket's public URL, for Storage::url()
+      - key: AWS_USE_PATH_STYLE_ENDPOINT
+        value: "true"           # required by R2
+
+      # --- AI --------------------------------------------------------------
+      # Semantic search and related papers work without this; summaries,
+      # Q&A and review drafts report "not configured" until it is set.
+      - key: AI_PROVIDER
+        value: groq
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_CHAT_MODEL
+        value: openai/gpt-oss-120b
+
+      # --- Mail ------------------------------------------------------------
+      # failover = smtp then log, so a missing app password degrades to the
+      # log rather than 500-ing password reset.
+      - key: MAIL_MAILER
+        value: failover
+      - key: MAIL_SCHEME
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false             # a Google App Password, not the account one
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+
+databases:
+  - name: scholardesk-db
+    plan: free
+    databaseName: scholardesk
+    user: scholardesk

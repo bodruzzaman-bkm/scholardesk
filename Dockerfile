@@ -62,10 +62,13 @@ FROM php:8.4-cli-alpine
 # The official PHP image already bundles mbstring, dom, simplexml, iconv,
 # openssl, curl, fileinfo and pdo_sqlite, which covers everything composer.lock
 # requires. Added here are the ones it does NOT ship:
-#   zip     — composer package extraction
-#   intl    — locale-aware formatting used by the bilingual UI
-#   bcmath  — arbitrary-precision arithmetic Laravel expects
-#   opcache — compiled-script cache; a large win for a PHP app under load
+#   zip      — composer package extraction
+#   intl     — locale-aware formatting used by the bilingual UI
+#   bcmath   — arbitrary-precision arithmetic Laravel expects
+#   opcache  — compiled-script cache; a large win for a PHP app under load
+#   pdo_pgsql— Postgres. Hosts without a persistent disk cannot keep a SQLite
+#              file, so the database moves to a managed Postgres there. SQLite
+#              still works where a volume exists; both drivers ship.
 # gd is deliberately absent: smalot/pdfparser only needs it for image
 # extraction, and this app reads text.
 RUN apk add --no-cache \
@@ -73,17 +76,20 @@ RUN apk add --no-cache \
       libzip \
       icu-libs \
       oniguruma \
+      libpq \
     && apk add --no-cache --virtual .build-deps \
       $PHPIZE_DEPS \
       sqlite-dev \
       libzip-dev \
       icu-dev \
       oniguruma-dev \
+      postgresql-dev \
     && docker-php-ext-install -j"$(nproc)" \
       zip \
       intl \
       bcmath \
       opcache \
+      pdo_pgsql \
     && apk del .build-deps
 
 # Uploads: the app caps a PDF at 10 MB, so the request ceiling is set above it

@@ -100,7 +100,7 @@ Stated plainly so nobody is surprised in a demo:
 | Views | Blade — no SPA framework |
 | Interactivity | Alpine.js, and pdf.js for the reader |
 | Styling | Tailwind CSS 3, built with Vite |
-| Database | SQLite by default; any Laravel-supported driver works |
+| Database | SQLite locally; Postgres when deployed without a disk |
 | PDF text | `smalot/pdfparser` |
 | AI | Groq (default) or Google Gemini |
 
@@ -159,7 +159,7 @@ including DOI lookups.
 php artisan test
 ```
 
-**368 tests, 1,082 assertions.** No network access is needed — outbound HTTP
+**375 tests, 1,099 assertions.** No network access is needed — outbound HTTP
 is faked, and `Http::preventStrayRequests()` fails the suite if any test tries
 to reach a real host.
 
@@ -167,18 +167,32 @@ to reach a real host.
 
 ## ☁️ Deployment
 
-`deploy.ps1` deploys to [Fly.io](https://fly.io) directly from this folder — no
-GitHub connection and no local Docker needed, since Fly builds the image on its
-own builders.
+Two hosts are supported. Both share the same `Dockerfile` and
+`docker/entrypoint.sh`; the entrypoint reads `DB_CONNECTION` and
+`FILESYSTEM_DISK` and configures itself accordingly.
+
+### Render — free, no credit card
+
+See **[docs/deploy-render.md](docs/deploy-render.md)** for the full walkthrough.
+
+`render.yaml` declares the web service and a managed Postgres. Because a free
+web service has no persistent disk, the two things that normally live on one
+move off it: the database to Postgres, and the uploaded PDFs to Cloudflare R2
+(S3-compatible, so Laravel's existing `s3` disk needs no code change).
+
+Worth knowing before a demo: a free service **sleeps when idle**, so the first
+request after a quiet spell takes 30–60 seconds.
+
+### Fly.io — simpler, needs a card on file
 
 ```powershell
 .\deploy.ps1        # first run creates the app, volume and secrets
 .\upload-data.ps1   # optional: seed the live site with your local library
 ```
 
-The SQLite database and uploaded PDFs live on a mounted volume at `/data`, so
-they survive redeploys. `docker/entrypoint.sh` symlinks the storage paths onto
-that volume and runs migrations at boot.
+One volume at `/data` holds both the SQLite database and the PDFs, so there is
+no Postgres and no object storage to configure. Fly does not bill an app this
+size, but an account now needs a card before it will deploy.
 
 ---
 
