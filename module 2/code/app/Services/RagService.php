@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ActivityType;
+use App\Enums\NotificationType;
 use App\Exceptions\AiUnavailableException;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
@@ -11,6 +12,7 @@ use App\Models\LiteratureReview;
 use App\Models\Paper;
 use App\Models\User;
 use Illuminate\Support\Collection as SupportCollection;
+use Illuminate\Support\Str;
 
 /**
  * Retrieval-augmented generation: retrieve → assemble → generate → cite.
@@ -41,6 +43,7 @@ class RagService
         private AiService $ai,
         private VectorSearchService $vectors,
         private ActivityService $activities,
+        private NotificationService $notifications,
     ) {}
 
     public function isConfigured(): bool
@@ -212,6 +215,22 @@ class RagService
         ]);
 
         $this->activities->record($collection, $user, ActivityType::ReviewGenerated);
+
+        /*
+         | Requirement 20: "when an AI task completes".
+         |
+         | A review over a whole collection is the slowest thing the assistant
+         | does, and the draft is saved rather than merely displayed — so the
+         | user may well have navigated away before it lands. The other AI
+         | routes need no notification: they are synchronous, and the person is
+         | watching the answer appear.
+         */
+        $this->notifications->notify(
+            $user,
+            NotificationType::AiDone,
+            sprintf('Your literature review for “%s” is ready.', Str::limit($collection->name, 60)),
+            route('collections.show', $collection, absolute: false),
+        );
 
         return $review;
     }

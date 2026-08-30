@@ -270,7 +270,7 @@ error; the limits shown in the UI now come from the running configuration.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:67, :48` | Single and batch upload |
+| `routes/web.php:67, :68` | Single and batch upload |
 | `app/Http/Controllers/PaperController.php` | `create()` :108, `store()` :113, `storeBatch()` :71 |
 | `app/Http/Requests/StorePaperRequest.php` | `prepareForValidation()` :26, `rules()` :40 |
 | `app/Http/Requests/StorePapersBatchRequest.php` | Up to 20 files |
@@ -386,7 +386,7 @@ response checked for the PDF magic bytes before it is stored.
 
 ```
 GET    /papers/{paper}          routes/web.php:69  -> PaperController::show()    :52
-GET    /papers/{paper}/edit     routes/web.php:85  -> PaperController::edit()    :128
+GET    /papers/{paper}/edit     routes/web.php:70  -> PaperController::edit()    :128
 PUT    /papers/{paper}          routes/web.php:71  -> PaperController::update()  :143
 DELETE /papers/{paper}          routes/web.php:72  -> PaperController::destroy() :170
 PATCH  /papers/{paper}/status   routes/web.php:74  -> PaperController::updateStatus() :182
@@ -612,7 +612,7 @@ Tags are per-user: `scopeOwnedBy` (`app/Models/Tag.php:31`) plus `TagPolicy`.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:110-113` | Tag CRUD |
+| `routes/web.php:111-114` | Tag CRUD |
 | `app/Http/Controllers/TagController.php` | `index()` :15, `store()` :27, `update()` :37, `destroy()` :51 |
 | `app/Models/Tag.php` | `papers()` :26, `scopeOwnedBy()` :31, `contrastingTextColor()` :42 |
 | `app/Http/Requests/StoreTagRequest.php`, `UpdateTagRequest.php` | Hex validation |

@@ -482,7 +482,7 @@ result on that document:
 
 `tests/Unit/RunOnTextTest.php` covers it.
 
-`POST /papers/{paper}/reindex` (`routes/web.php:91`) retries a failed
+`POST /papers/{paper}/reindex` (`routes/web.php:76`) retries a failed
 extraction.
 
 ---

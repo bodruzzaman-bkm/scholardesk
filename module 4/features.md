@@ -11,7 +11,7 @@ into this folder under `code/` at the same path — so
 `code/app/Services/ExportService.php`. Line numbers were re-verified against
 the live source on 2026-08-31.
 
-**Status: seven of seven implemented.** 98 tests, 299 assertions, all passing.
+**Status: seven of seven implemented.** 103 tests, 312 assertions, all passing.
 
 > **What changed in this module.** Three requirements were complete and four
 > were only partially built. Requirement 16 exported a Markdown file with no
@@ -205,7 +205,7 @@ removed (`:166`).
 ### Code path
 
 ```
-POST   /collections/{collection}/comments   routes/web.php:120
+POST   /collections/{collection}/comments   routes/web.php:96
   -> CommentController::store()             app/Http/Controllers/CommentController.php:25
 POST   /papers/{paper}/comments             routes/web.php:97      <- NEW
   -> CommentController::storePaper()        app/Http/Controllers/CommentController.php:72
@@ -316,7 +316,7 @@ when both are gone.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:120-99` | Both comment entry points |
+| `routes/web.php:96-99` | Both comment entry points |
 | `app/Http/Controllers/CommentController.php` | `store()` :25, `storePaper()` :72, `notifyPaperAudience()` :107 |
 | `app/Models/Comment.php` | `replies()`, `roots()`, `displayContent()` |
 | `app/Policies/CommentPolicy.php`, `PaperPolicy.php` | Who may edit, delete, comment |
@@ -386,7 +386,33 @@ describes has nowhere useful to live.
 |---|---|
 | Added to a collection | `CollectionService::addMember()` :118 |
 | Someone comments | `CommentController::store()` :25 and `storePaper()` :72 |
-| An AI task completes | `NotificationType::AiDone` |
+| An AI task completes | `IndexPaper::announce()` and `RagService::draftReview()` :228 |
+
+> **The third trigger was the gap in this module.**
+> `NotificationType::AiDone` existed as an enum case and **nothing ever
+> dispatched it** — the requirement was two-thirds built, and the shortfall was
+> invisible, because an unused enum case throws no error and fails no test.
+> This is the same trap that had already caught `NoteAdded` and
+> `StatusChanged` in requirement 19.
+>
+> Which AI tasks should announce themselves is a judgement, not a formality.
+> Summaries and Q&A are **synchronous** — the user is watching the answer
+> appear and telling them it arrived is noise. The two that earn a
+> notification are the ones the user is not waiting on:
+>
+> * **Indexing** (`app/Jobs/IndexPaper.php`) runs *after* the response is
+>   sent, so by the time it finishes the user has moved on. Until it does, the
+>   paper is invisible to semantic search, related papers and every Q&A route,
+>   and nothing else would say so. A **failure** is announced too: silence
+>   after an upload reads as success, and the user would otherwise discover
+>   the problem only when the assistant claimed to know nothing about a paper
+>   they had just added.
+> * **A literature review** is the slowest thing the assistant does, and the
+>   draft is saved rather than merely displayed, so the user may well have
+>   navigated away before it lands.
+>
+> `tests/Feature/AiTaskNotificationTest.php` pins all three triggers, so a
+> case can never again be declared and forgotten.
 
 ### In-app is the source of truth, email is best-effort — `app/Services/NotificationService.php:20`
 
@@ -628,7 +654,7 @@ the other fails the suite rather than silently falling back to English.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:126, :143-150` | Reporting and the admin portal |
+| `routes/web.php:102, :143-150` | Reporting and the admin portal |
 | `app/Http/Controllers/AdminController.php` | `index()` :29, `users()` :54, `updateRole()` :72, `comments()` :90, `toggleCommentVisibility()` :104, `reports()` :117, `resolveReport()` :142 |
 | `app/Http/Controllers/ReportController.php` | `store()` :39, `authorizeVisibility()` :83 |
 | `app/Models/Report.php`, `app/Enums/ReportStatus.php` | The report and its lifecycle |
@@ -658,7 +684,7 @@ Run this module's tests from the project root:
 php artisan test --filter="CollectionArchive|Collaboration|PaperComment|Notification|Analytics|AdminPortal|Reporting|ExportAndLocale|RequirementCoverage"
 ```
 
-→ 98 tests, 299 assertions, passing. The whole application suite is **368
+→ 103 tests, 312 assertions, passing. The whole application suite is **368
 tests, 1,082 assertions**.
 
 ---

@@ -32,7 +32,7 @@ POST /ai/collections/{collection}/ask     routes/web.php:137
   -> rendered by                          resources/views/components/ai/chat.blade.php
 ```
 
-### 1. The route — `routes/web.php:133-139`
+### 1. The route — `routes/web.php:134-138`
 
 Throttled, because every call spends the provider's token quota.
 
@@ -186,7 +186,7 @@ The `\b` word boundary is what stops `P1` matching inside `P12`.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:133-139` | Throttled AI routes |
+| `routes/web.php:134-138` | Throttled AI routes |
 | `app/Http/Controllers/AiController.php` | `askCollection()` :73, `guard()` :150 |
 | `app/Services/RagService.php` | `askCollection()` :139, `answer()` :225, `answerCites()` :310 |
 | `app/Services/VectorSearchService.php` | `search()` :70, `accessiblePaperIds()` :201 |
@@ -524,9 +524,9 @@ Two decisions worth pointing at:
 ```
 POST /ai/collections/{collection}/review    routes/web.php:138
   -> AiController::review()                 app/Http/Controllers/AiController.php:95
-     -> RagService::draftReview()           app/Services/RagService.php:157
+     -> RagService::draftReview()           app/Services/RagService.php:160
         -> AiService::generate()            app/Services/AiService.php
-        -> LiteratureReview::create()       app/Services/RagService.php:206
+        -> LiteratureReview::create()       app/Services/RagService.php:209
         -> ActivityService::record()        app/Services/RagService.php:214
   -> rendered by                            resources/views/components/ai/review.blade.php
 ```
@@ -566,7 +566,7 @@ public function review(Request $request, Collection $collection): JsonResponse
 `$paperIds ?: null` is what makes **"selected papers *or* a whole collection"**
 work: an empty selection becomes `null`, and `null` means everything.
 
-### 2. Selected papers, or all of them — `app/Services/RagService.php:157-166`
+### 2. Selected papers, or all of them — `app/Services/RagService.php:160-169`
 
 ```php
 public function draftReview(Collection $collection, User $user, ?array $paperIds = null): LiteratureReview
@@ -582,7 +582,7 @@ public function draftReview(Collection $collection, User $user, ?array $paperIds
 
 `when($paperIds, ...)` applies the `whereIn` only when a selection was sent.
 
-### 3. The structure — `app/Services/RagService.php:184-203`
+### 3. The structure — `app/Services/RagService.php:187-206`
 
 ```php
 $prompt = <<<PROMPT
@@ -606,7 +606,7 @@ PAPERS:
 PROMPT;
 ```
 
-### 4. Saving it — `app/Services/RagService.php:206-214`
+### 4. Saving it — `app/Services/RagService.php:209-220`
 
 ```php
 $review = LiteratureReview::create([
@@ -649,7 +649,7 @@ Plus Select-all / None controls at lines 46-47.
 |---|---|
 | `routes/web.php:138` | Throttled review endpoint |
 | `app/Http/Controllers/AiController.php` | `review()` :95, selection validation :99-107 |
-| `app/Services/RagService.php` | `draftReview()` :157, prompt :184, persistence :206 |
+| `app/Services/RagService.php` | `draftReview()` :160, prompt :187, persistence :209 |
 | `app/Models/LiteratureReview.php` | The saved draft, `paper_ids` cast |
 | `resources/views/components/ai/review.blade.php` | Checkboxes, Select all / None |
 | `resources/views/collections/show.blade.php:182-197` | Saved-draft list |
@@ -821,7 +821,7 @@ Feature hashing over word tokens and character trigrams, L2-normalised. It
 needs no API key, which is why requirements 12 and 13 work with no provider
 configured at all.
 
-`POST /papers/{paper}/reindex` (`routes/web.php:91`) retries a failed
+`POST /papers/{paper}/reindex` (`routes/web.php:76`) retries a failed
 extraction.
 
 ---
@@ -833,7 +833,7 @@ extraction.
 | 11 | Collection Q&A with citations | `RagService::askCollection()` :139, `answer()` :225 | Built |
 | 12 | Semantic + keyword search, 5 filters | `SearchController::index()` :26, `Paper` scopes :141-206 | Built |
 | 13 | Related papers | `VectorSearchService::relatedPapers()` :96 | Built |
-| 14 | Literature-review draft | `RagService::draftReview()` :157 | Built |
+| 14 | Literature-review draft | `RagService::draftReview()` :160 | Built |
 | 15 | Citation export | `CitationService` :18-130 | Built |
 
 Run the module's tests from the project root:
