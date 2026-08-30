@@ -32,7 +32,20 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'locale' => Locale::class,
+            'suspended_at' => 'datetime',
         ];
+    }
+
+    /**
+     * A suspended account keeps everything it owns but cannot sign in.
+     *
+     * Checked at the login gate and again on every authenticated request, so
+     * suspending someone who is already signed in takes effect immediately
+     * rather than at their next login.
+     */
+    public function isSuspended(): bool
+    {
+        return $this->suspended_at !== null;
     }
 
     public function isAdmin(): bool

@@ -8,7 +8,7 @@ the module, plus the documentation for it.
 | File | What it is |
 |---|---|
 | [`features.md`](features.md) | Every requirement, the code path, the actual code, and where it lives |
-| [`code/`](code/) | The 57 source files, at their real project paths |
+| [`code/`](code/) | The 66 source files, at their real project paths |
 | [`sync.ps1`](sync.ps1) | Re-copies `code/` from the live app so it cannot drift |
 
 ---
@@ -56,9 +56,10 @@ generated reviews.
 **Req 21** — an analytics dashboard at `/analytics`: papers added over time
 and breakdowns by year, **venue**, tag and reading status.
 
-**Req 22** — administrators manage accounts and roles, work a **report
-queue**, and see system-wide statistics. The interface is available in English
-and Bangla.
+**Req 22** — administrators manage accounts and roles — including
+**suspending** an account, which blocks sign-in without destroying the user's
+library — work a **report queue**, and see system-wide statistics. The
+interface is available in English and Bangla.
 
 `features.md` maps each of these to the exact file and line that implements
 it.
@@ -75,7 +76,8 @@ this is what closed them:
 | 16 | A Markdown file with no PDFs in it | A zip carrying the document, a bibliography and every PDF |
 | 18 | Comments on collections only | Comments on papers too — including papers in no collection, which the schema could not represent |
 | 21 | No venue breakdown, no dedicated page | `papersByVenue()` and a full `/analytics` page |
-| 22 | Admins could hide a comment; nobody could report one | A polymorphic `reports` table, a report control on comments and papers, and an admin queue |
+| 20 | `AiDone` declared but never dispatched | Indexing and review completion both notify |
+| 22 | Admins could hide a comment; nobody could report one, and no lever over an account | A polymorphic `reports` table, a report control, an admin queue, and account suspension |
 
 Requirement 18 needed a **schema change**: `comments.collection_id` was
 `NOT NULL`, so a paper belonging to no collection could not be commented on at
@@ -88,11 +90,11 @@ all. `2026_08_28_100000_allow_paper_only_comments.php` makes it nullable.
 From the **project root**, not this folder:
 
 ```bash
-php artisan test --filter="CollectionArchive|Collaboration|PaperComment|Notification|Analytics|AdminPortal|Reporting|ExportAndLocale|RequirementCoverage"
+php artisan test --filter="CollectionArchive|Collaboration|PaperComment|Notification|Analytics|AdminPortal|Reporting|ExportAndLocale|RequirementCoverage|AiTaskNotification|AccountSuspension"
 ```
 
-That is **103 tests, 312 assertions**, all passing. The whole application suite
-is **380 tests, 1,112 assertions**.
+That is **116 tests, 354 assertions**, all passing. The whole application suite
+is **393 tests, 1,154 assertions**.
 
 `tests/Feature/RequirementCoverageTest.php` is worth knowing about: it walks
 **all 22 numbered requirements** across every module, one test each, asserting

@@ -59,7 +59,11 @@ $files = @(
     # -- Req 22: administration, reporting, bilingual UI ------------------
     'app/Http/Controllers/AdminController.php',
     'app/Http/Controllers/ReportController.php',
+    'app/Http/Middleware/EnsureUserIsNotSuspended.php',
+    'app/Http/Requests/Auth/LoginRequest.php',
     'app/Models/Report.php',
+    'app/Models/User.php',
+    'app/Jobs/IndexPaper.php',
     'app/Enums/ReportStatus.php',
     'app/Enums/UserRole.php',
     'app/Http/Middleware/EnsureUserIsAdmin.php',
@@ -74,7 +78,10 @@ $files = @(
     'resources/views/settings/edit.blade.php',
     'lang/en/app.php',
     'lang/bn/app.php',
+    'lang/en/auth.php',
+    'lang/bn/auth.php',
     'database/migrations/2026_08_28_110000_create_reports_table.php',
+    'database/migrations/2026_08_31_120000_add_suspension_to_users.php',
 
     # -- Shared schema for collaboration ----------------------------------
     'database/migrations/2026_08_21_140000_create_collaboration_tables.php',
@@ -90,7 +97,9 @@ $files = @(
     'tests/Feature/AdminPortalTest.php',
     'tests/Feature/ReportingTest.php',
     'tests/Feature/ExportAndLocaleTest.php',
-    'tests/Feature/RequirementCoverageTest.php'
+    'tests/Feature/RequirementCoverageTest.php',
+    'tests/Feature/AiTaskNotificationTest.php',
+    'tests/Feature/AccountSuspensionTest.php'
 )
 
 if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }

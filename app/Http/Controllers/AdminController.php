@@ -86,6 +86,47 @@ class AdminController extends Controller
         return back()->with('success', "Role updated for {$user->name}.");
     }
 
+    /**
+     * Suspend or reinstate an account (requirement 22).
+     *
+     * Suspension rather than deletion: deleting a user cascades through their
+     * papers, collections, notes, highlights and comments, which destroys a
+     * library to silence an account and cannot be undone. A suspended user
+     * keeps everything and simply cannot sign in.
+     *
+     * The suspension columns are deliberately absent from the model's
+     * fillable list — they are a privileged decision, not user-editable data
+     * — so they are assigned explicitly here rather than mass-assigned.
+     */
+    public function toggleSuspension(Request $request, User $user): RedirectResponse
+    {
+        // The same guard as updateRole: an administrator locking themselves
+        // out is unrecoverable without database access.
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', 'You cannot suspend your own account.');
+        }
+
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        if ($user->isSuspended()) {
+            $user->suspended_at = null;
+            $user->suspended_by = null;
+            $user->suspension_reason = null;
+            $user->save();
+
+            return back()->with('success', "{$user->name} can sign in again.");
+        }
+
+        $user->suspended_at = now();
+        $user->suspended_by = $request->user()->id;
+        $user->suspension_reason = $validated['reason'] ?? null;
+        $user->save();
+
+        return back()->with('success', "{$user->name} is suspended and has been signed out.");
+    }
+
     /** Moderation queue: every comment, newest first. */
     public function comments(): View
     {

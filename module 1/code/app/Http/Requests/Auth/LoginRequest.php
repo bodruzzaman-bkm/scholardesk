@@ -50,6 +50,24 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        /*
+         | A suspended account has valid credentials but no access
+         | (requirement 22). The check comes after Auth::attempt rather than
+         | before, so the response cannot be used to discover which addresses
+         | are registered: a wrong password and a suspended account both fail,
+         | and only someone who already knows the password learns which.
+         |
+         | Log out immediately, or the session survives the thrown exception.
+         */
+        if (Auth::user()->isSuspended()) {
+            Auth::logout();
+            $this->session()->invalidate();
+
+            throw ValidationException::withMessages([
+                'email' => trans('auth.suspended'),
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

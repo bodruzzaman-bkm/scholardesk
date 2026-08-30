@@ -144,6 +144,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::patch('/users/{user}/role', [AdminController::class, 'updateRole'])->name('users.role');
+        Route::patch('/users/{user}/suspension', [AdminController::class, 'toggleSuspension'])->name('users.suspension');
         Route::get('/comments', [AdminController::class, 'comments'])->name('comments');
         Route::patch('/comments/{comment}/visibility', [AdminController::class, 'toggleCommentVisibility'])->name('comments.visibility');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');

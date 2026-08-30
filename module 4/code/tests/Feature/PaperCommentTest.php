@@ -152,3 +152,38 @@ it('renders a paper-only comment in the admin moderation queue', function () {
         ->assertSee('Orphan Paper')
         ->assertSee('No collection here.');
 });
+
+it('records a paper comment in the activity feed of every collection holding it', function () {
+    $owner = User::factory()->create();
+    $paper = Paper::create(['title' => 'Shared Paper', 'user_id' => $owner->id]);
+
+    // The same paper filed in two collections.
+    $a = Collection::create(['name' => 'Alpha', 'user_id' => $owner->id]);
+    $b = Collection::create(['name' => 'Beta', 'user_id' => $owner->id]);
+    $a->papers()->attach($paper);
+    $b->papers()->attach($paper);
+
+    actingAs($owner)->post(route('papers.comments.store', $paper), ['content' => 'Worth reading.']);
+
+    // Requirement 19 says the feed records "comments posted" — to a
+    // collaborator watching Alpha, a comment on a paper inside Alpha is
+    // exactly the event the feed exists to surface.
+    foreach ([$a, $b] as $collection) {
+        expect(
+            App\Models\Activity::where('collection_id', $collection->id)
+                ->where('type', App\Enums\ActivityType::CommentAdded->value)
+                ->exists()
+        )->toBeTrue("the comment should appear in {$collection->name}'s feed");
+    }
+});
+
+it('does not invent a feed entry for a paper in no collection', function () {
+    $user = User::factory()->create();
+    $paper = Paper::create(['title' => 'Solo', 'user_id' => $user->id]);
+
+    actingAs($user)->post(route('papers.comments.store', $paper), ['content' => 'Private thought.']);
+
+    // No collection means no feed to write to; the comment still lands.
+    expect(App\Models\Activity::count())->toBe(0)
+        ->and(Comment::count())->toBe(1);
+});

@@ -92,6 +92,22 @@ class CommentController extends Controller
             'content' => $validated['content'],
         ]);
 
+        /*
+         | Requirement 19: the feed records "comments posted".
+         |
+         | A paper thread has no collection of its own, but the paper may sit
+         | in several — and to the collaborators watching one of those feeds,
+         | a comment on a paper inside it is exactly the event the feed exists
+         | to surface. Recording it against every collection holding the paper
+         | mirrors what updateStatus() does for a status change.
+         */
+        foreach ($paper->collections()->get() as $collection) {
+            $this->activities->record($collection, $request->user(), ActivityType::CommentAdded, [
+                'paper_id' => $paper->id,
+                'title' => $paper->title,
+            ]);
+        }
+
         $this->notifyPaperAudience($paper, $request->user(), $notifications);
 
         return back()->with('success', 'Comment posted.');

@@ -14,9 +14,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Applies the signed-in user's saved UI language to every web request.
+        /*
+         | SetLocale applies the signed-in user's saved UI language.
+         |
+         | EnsureUserIsNotSuspended runs on every web request so a suspension
+         | takes hold immediately. Checking only at the login gate would let a
+         | suspended user carry on until their session expired — with a
+         | remembered login, potentially weeks after the decision.
+         */
         $middleware->web(append: [
             App\Http\Middleware\SetLocale::class,
+            App\Http\Middleware\EnsureUserIsNotSuspended::class,
         ]);
 
         $middleware->alias([

@@ -11,7 +11,7 @@ into this folder under `code/` at the same path — so
 `code/app/Services/ExportService.php`. Line numbers were re-verified against
 the live source on 2026-08-31.
 
-**Status: seven of seven implemented.** 103 tests, 312 assertions, all passing.
+**Status: seven of seven implemented.** 116 tests, 354 assertions, all passing.
 
 > **What changed in this module.** Three requirements were complete and four
 > were only partially built. Requirement 16 exported a Markdown file with no
@@ -350,6 +350,15 @@ The three the proposal names are covered, plus five more.
 > enum listed them and nothing wrote them. Both are now wired up, in
 > `NoteController` and `PaperController::updateStatus()`
 > (`app/Http/Controllers/PaperController.php:201`, the feed write at `:218-224`).
+>
+> A third case of the same shape: **a comment on a paper did not reach the
+> feed at all.** A paper thread has no collection of its own, so
+> `storePaper()` recorded nothing — yet to collaborators watching a
+> collection that holds the paper, a comment on it is exactly the event the
+> feed exists to surface. It is now recorded against every collection holding
+> the paper, mirroring what `updateStatus()` does for a status change
+> (`app/Http/Controllers/CommentController.php:95-108`). A paper in no
+> collection still writes nothing, because there is no feed to write to.
 
 ### Recording — `app/Services/ActivityService.php:21`
 
@@ -555,7 +564,10 @@ rather than dividing by zero, which `AnalyticsTest` asserts explicitly.
 
 Four separate obligations. Each one:
 
-### 1. Manage user accounts and roles — `app/Http/Controllers/AdminController.php:54, :72`
+### 1. Manage user accounts and roles — `app/Http/Controllers/AdminController.php:54, :72, :90`
+
+Roles first. An administrator cannot demote themselves, because doing so is
+unrecoverable without database access:
 
 ```php
 // An administrator must not be able to strip their own access and
@@ -564,6 +576,35 @@ if ($user->id === $request->user()->id) {
     return back()->with('error', 'You cannot change your own role.');
 }
 ```
+
+**Accounts, not only roles.** The requirement says "user accounts *and*
+roles", and role management alone left an administrator with no lever over a
+bad account: the report queue could surface an abusive user, and the only
+available response was hiding their comments one at a time — which makes
+"moderate reported content" a gesture rather than a power.
+
+`toggleSuspension()` (`AdminController.php:90`) is that lever. **Suspension
+rather than deletion**, deliberately: deleting a user cascades through their
+papers, collections, notes, highlights and comments, so it destroys a library
+to silence an account and cannot be undone. A suspended user keeps everything
+and simply cannot sign in.
+
+It is enforced in two places, and both are needed:
+
+* `LoginRequest::authenticate()` blocks the sign-in — **after** the credential
+  check, so the response cannot be used to discover which addresses are
+  registered. Only someone who already proved the password learns the account
+  is suspended, and they are told plainly rather than being shown a wrong-password
+  message they would try to fix by resetting it.
+* `EnsureUserIsNotSuspended` runs on every web request, so suspending someone
+  who is already signed in takes effect immediately. Checking only at the
+  login gate would let a remembered session carry on for weeks past the
+  decision.
+
+The suspension columns are absent from the model's `fillable` list — they are
+a privileged decision, not user-editable data — so they are assigned
+explicitly rather than mass-assigned. `suspended_by` and `suspension_reason`
+record who acted and why, so a moderation decision can be reviewed later.
 
 ### 2. Moderate reported content — the part that was missing
 
@@ -684,7 +725,7 @@ Run this module's tests from the project root:
 php artisan test --filter="CollectionArchive|Collaboration|PaperComment|Notification|Analytics|AdminPortal|Reporting|ExportAndLocale|RequirementCoverage"
 ```
 
-→ 103 tests, 312 assertions, passing. The whole application suite is **368
+→ 116 tests, 354 assertions, passing. The whole application suite is **368
 tests, 1,082 assertions**.
 
 ---

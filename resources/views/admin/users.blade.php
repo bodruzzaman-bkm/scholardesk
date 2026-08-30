@@ -32,6 +32,7 @@
                             <th scope="col" class="px-4 py-3 font-medium text-gray-700 dark:text-gray-300 text-right">Collections</th>
                             <th scope="col" class="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Joined</th>
                             <th scope="col" class="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Role</th>
+                            <th scope="col" class="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Access</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -41,6 +42,9 @@
                                     {{ $user->name }}
                                     @if ($user->id === auth()->id())
                                         <span class="text-xs text-gray-400">(you)</span>
+                                    @endif
+                                    @if ($user->isSuspended())
+                                        <span class="badge badge-red ml-1">Suspended</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $user->email }}</td>
@@ -66,10 +70,44 @@
                                         </form>
                                     @endif
                                 </td>
+
+                                {{-- Requirement 22: an administrator needs a lever over
+                                     an account, not only over its role. Suspension is
+                                     reversible; deletion would take the user's whole
+                                     library with it. --}}
+                                <td class="px-4 py-3">
+                                    @if ($user->id === auth()->id())
+                                        <span class="muted text-xs">&mdash;</span>
+                                    @elseif ($user->isSuspended())
+                                        <form method="POST" action="{{ route('admin.users.suspension', $user) }}">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="btn btn-sm btn-secondary">Reinstate</button>
+                                        </form>
+                                        @if ($user->suspension_reason)
+                                            <p class="muted text-xs mt-1 max-w-[14rem]">{{ $user->suspension_reason }}</p>
+                                        @endif
+                                    @else
+                                        <details>
+                                            <summary class="text-xs text-red-600 dark:text-red-400 cursor-pointer list-none hover:underline">
+                                                Suspend
+                                            </summary>
+                                            <form method="POST" action="{{ route('admin.users.suspension', $user) }}" class="mt-2 w-56">
+                                                @csrf @method('PATCH')
+                                                <label for="reason-{{ $user->id }}" class="sr-only">Reason</label>
+                                                <textarea id="reason-{{ $user->id }}" name="reason" rows="2" maxlength="500"
+                                                          placeholder="Reason (optional)"
+                                                          class="field text-xs"></textarea>
+                                                <button type="submit" class="btn btn-sm btn-danger w-full mt-1">
+                                                    Suspend account
+                                                </button>
+                                            </form>
+                                        </details>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                                     No users matched.
                                 </td>
                             </tr>
