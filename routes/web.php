@@ -22,8 +22,23 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+/*
+ | Auth only, deliberately not 'verified'.
+ |
+ | The verification machinery is all present — routes/auth.php:40-48, the
+ | notice view, the signed-URL controller — but App\Models\User does not
+ | implement MustVerifyEmail, so the 'verified' middleware that used to sit
+ | here enforced nothing. A route that advertises a protection it does not
+ | apply is worse than one that claims less than it does.
+ |
+ | To turn verification on for real, both halves are needed:
+ |   1. implement MustVerifyEmail on App\Models\User
+ |   2. configure a real mailer — with MAIL_MAILER=log the verification link
+ |      is written to storage/logs and nobody can ever pass the gate
+ | then add 'verified' back here.
+ */
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware('auth')
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
