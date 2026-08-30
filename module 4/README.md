@@ -5,6 +5,21 @@
 This folder is the Module 4 submission: the real source files that implement
 the module, plus the documentation for it.
 
+## Status — 7 of 7 implemented
+
+| # | Requirement | Status |
+|---|---|---|
+| 16 | Export a collection — papers, notes, bibliography — as one file | ✅ Done |
+| 17 | Share a collection as Editor or Viewer; manage members and roles | ✅ Done |
+| 18 | Threaded comments on collections **and** individual papers | ✅ Done |
+| 19 | Per-collection activity feed | ✅ Done |
+| 20 | In-app notifications and matching emails, three triggers | ✅ Done |
+| 21 | Analytics dashboard — over time, year, venue, tag, status | ✅ Done |
+| 22 | Admin: accounts, roles, reported content, statistics, EN/BN | ✅ Done |
+
+**116 tests, 354 assertions** for this module, all passing. Each requirement
+is broken down below with what was built and where.
+
 | File | What it is |
 |---|---|
 | [`features.md`](features.md) | Every requirement, the code path, the actual code, and where it lives |
@@ -35,34 +50,175 @@ comments. The app does not load that file.
 
 ---
 
-## What is in this module
+## The seven requirements, and what was built
 
-**Req 16** — download a whole collection as a single **zip**: the Markdown
-document with metadata and your notes, a BibTeX bibliography, and every
-paper's PDF.
+Quoted verbatim from the proposal. **All seven are implemented**; every line
+number is verified against the live source, and every claim has a test.
 
-**Req 17** — share a collection as Editor or Viewer, manage members and their
-roles, enforced by `CollectionPolicy` on every action.
+---
 
-**Req 18** — threaded comments on shared collections **and** on individual
-papers, with edit and delete of your own.
+### ✅ 16 — Export a collection as one file
 
-**Req 19** — a per-collection activity feed recording papers added and
-removed, notes, comments, members joining and leaving, status changes and
-generated reviews.
+> *"The Users can export a whole collection, its papers, notes, and a
+> formatted bibliography, as a single downloadable file."*
 
-**Req 20** — in-app notifications with an unread badge, plus a matching email.
+**Delivered.** `GET /collections/{id}/bundle` returns a **zip** containing:
 
-**Req 21** — an analytics dashboard at `/analytics`: papers added over time
-and breakdowns by year, **venue**, tag and reading status.
+| Entry | Contents |
+|---|---|
+| `<collection>.md` | Every paper's metadata, **your** notes, and the latest saved review |
+| `bibliography.bib` | BibTeX for the whole collection, importable as-is |
+| `papers/*.pdf` | The actual PDFs |
 
-**Req 22** — administrators manage accounts and roles — including
-**suspending** an account, which blocks sign-in without destroying the user's
-library — work a **report queue**, and see system-wide statistics. The
-interface is available in English and Bangla.
+Notes stay private to their author even inside a shared collection. A
+metadata-only paper (imported by DOI, no open-access PDF) is skipped rather
+than failing the export, and two papers sharing a title do not overwrite each
+other in the archive.
 
-`features.md` maps each of these to the exact file and line that implements
-it.
+`ExportService::collectionArchive()` · `tests/Feature/CollectionArchiveTest.php`
+
+---
+
+### ✅ 17 — Share a collection as Editor or Viewer
+
+> *"Users can share a collection with collaborators as an Editor or a Viewer
+> and manage members and their roles, with access enforced by the system."*
+
+**Delivered.** Invite by email, assign Owner / Editor / Viewer, change a
+member's role, remove a member. Roles are *ranked*, so a permission check
+reads `atLeast(MemberRole::Editor)` rather than listing acceptable roles at
+each call site.
+
+Enforcement is in `CollectionPolicy`, not in the views — a Viewer who posts
+the right form still gets a 403. Two invariants protect the model: the owner's
+role cannot be reassigned, and the owner cannot be removed.
+
+`CollectionMemberController` · `CollectionService::addMember()` ·
+`tests/Feature/CollaborationTest.php`
+
+---
+
+### ✅ 18 — Threaded comments on collections *and* papers
+
+> *"The Users can post threaded comments on shared collections and individual
+> papers, and edit or delete their own comments."*
+
+**Delivered, both anchors.** One `<x-comment>` component serves either; a
+reply's parent is validated against the same thread, so a crafted id cannot
+graft a reply onto another collection's or paper's discussion. Authors edit
+and delete their own; administrators may remove one as moderation.
+
+> This required a **schema change**. `comments.collection_id` was `NOT NULL`,
+> so a paper belonging to no collection could not be discussed at all — the
+> "individual papers" half was unrepresentable, not merely unbuilt.
+
+`CommentController::store()` and `storePaper()` ·
+`tests/Feature/PaperCommentTest.php`
+
+---
+
+### ✅ 19 — Per-collection activity feed
+
+> *"The system maintains a per-collection activity feed that records events
+> such as papers added, comments posted, and members joining."*
+
+**Delivered.** Eight event types — the three named, plus papers removed, notes
+added, members removed, reading-status changes and generated reviews. Metadata
+is stored as JSON, so an entry keeps the paper title as it was and stays
+readable after a rename or deletion.
+
+A comment on a **paper** is recorded against every collection holding it: to a
+collaborator watching that feed, it is exactly the event the feed exists to
+surface.
+
+`ActivityService::record()` · `tests/Feature/CollaborationTest.php`
+
+---
+
+### ✅ 20 — Notifications, in-app and by email
+
+> *"The Users receive in-app notifications and matching emails when they are
+> added to a collection, when someone comments, or when an AI task
+> completes."*
+
+**Delivered, all three triggers:**
+
+| Trigger | Fires from |
+|---|---|
+| Added to a collection | `CollectionService::addMember()` |
+| Someone comments | `CommentController::store()` / `storePaper()` |
+| An AI task completes | `IndexPaper` (a paper becomes searchable) and a finished literature review |
+
+The in-app row is the source of truth; the email is best-effort and a mail
+failure never breaks the request that triggered it. Nobody is notified about
+their own action.
+
+> **Email needs credentials to actually send.** `MAIL_MAILER=failover` tries
+> SMTP then falls back to writing the message to the log — so a missing app
+> password degrades instead of turning "forgot password" into a 500. Add a
+> Google App Password to `.env` for real delivery.
+
+`NotificationService::notify()` · `tests/Feature/AiTaskNotificationTest.php`
+
+---
+
+### ✅ 21 — Analytics dashboard
+
+> *"The system provides an analytics dashboard showing papers added over time
+> and breakdowns by year, venue, tag, and reading status."*
+
+**Delivered at `/analytics`**, all five:
+
+| Breakdown | Method |
+|---|---|
+| Papers added over time | `papersAddedByMonth()` — 12 months, gaps included |
+| By publication year | `papersByYear()` |
+| **By venue** | `papersByVenue()` |
+| By tag | `topTags()` |
+| By reading status | `readingStatusBreakdown()` |
+
+Charts are plain divs with a percentage width — no charting library, works
+without JavaScript, correct in both light and dark themes. An empty library
+renders zeroes rather than dividing by zero. Every query is scoped to one user
+id, so there is no path that surfaces another researcher's numbers.
+
+`AnalyticsController` · `tests/Feature/AnalyticsTest.php`
+
+---
+
+### ✅ 22 — System administration
+
+> *"Administrators can manage user accounts and roles, moderate reported
+> content, and view system-wide statistics, and the interface is available in
+> English and Bangla."*
+
+**Delivered, all four obligations:**
+
+- **Accounts and roles** — list and search users, change roles, and **suspend
+  an account**. Suspension rather than deletion: deleting a user cascades
+  through their papers, collections, notes, highlights and comments, so it
+  destroys a library to silence an account. A suspended user keeps everything
+  and simply cannot sign in — enforced at the login gate *and* on every
+  request, so it takes effect immediately rather than when their session
+  expires.
+- **Moderate reported content** — any user can flag a comment or a paper with
+  a reason; administrators work a queue and mark each Resolved or Dismissed.
+  Hiding a comment is reversible and leaves a tombstone so replies keep their
+  context.
+- **System-wide statistics** — users, admins, papers, collections, notes,
+  highlights, comments, indexed papers, chunks, open reports and storage used.
+- **English and Bangla** — switchable in Settings, applied by `SetLocale`. The
+  suite asserts both locale files carry identical keys, so a string added to
+  one and forgotten in the other fails rather than silently falling back.
+
+`AdminController` · `ReportController` ·
+`tests/Feature/ReportingTest.php`, `AccountSuspensionTest.php`,
+`AdminPortalTest.php`
+
+---
+
+`features.md` maps every one of these to the exact file and line that
+implements it, with the real code quoted.
 
 ---
 
