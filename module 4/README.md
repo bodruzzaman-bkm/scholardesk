@@ -92,7 +92,7 @@ php artisan test --filter="CollectionArchive|Collaboration|PaperComment|Notifica
 ```
 
 That is **98 tests, 299 assertions**, all passing. The whole application suite
-is **368 tests, 1,082 assertions**.
+is **375 tests, 1,099 assertions**.
 
 `tests/Feature/RequirementCoverageTest.php` is worth knowing about: it walks
 **all 22 numbered requirements** across every module, one test each, asserting

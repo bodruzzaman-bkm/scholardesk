@@ -73,8 +73,8 @@ From the **project root**, not this folder:
 php artisan test --filter="Auth|RegistrationRole|Authorization|PaperLibrary|ImportByUrl|OpenAccessPdf|BulkUpload|ReadingStatusControl|Collection|TagSmoke|UploadLimits|MetadataService|Doi"
 ```
 
-That is **139 tests, 447 assertions**, all passing. The whole application
-suite is 309 tests.
+That is **158 tests, 505 assertions**, all passing. The whole application
+suite is 375 tests.
 
 ---
 

@@ -9,9 +9,9 @@ implements it, and the file it lives in.
 **Paths are relative to the project root.** Every file listed is also copied
 into this folder under `code/` at the same path — so
 `app/Services/PaperService.php` is here as `code/app/Services/PaperService.php`.
-Line numbers were taken from the live source on 2026-08-24.
+Line numbers were re-verified against the live source on 2026-08-31.
 
-**Status: all implemented.** 139 tests, 447 assertions, all passing.
+**Status: all implemented.** 158 tests, 505 assertions, all passing.
 
 ---
 
@@ -199,14 +199,14 @@ the creator rather than relying on `owner_id` being special-cased everywhere.
 ### Code path
 
 ```
-POST /papers                    routes/web.php:47
+POST /papers                    routes/web.php:67
   -> PaperController::store()   app/Http/Controllers/PaperController.php:113
      -> StorePaperRequest       app/Http/Requests/StorePaperRequest.php
      -> PaperService::createForUser()  app/Services/PaperService.php:62
         -> MetadataService::lookup()   app/Services/MetadataService.php:38
         -> PaperService::queueIndexing()  :190
 
-POST /papers/batch              routes/web.php:48
+POST /papers/batch              routes/web.php:68
   -> PaperController::storeBatch()  :71
      -> PaperService::createManyFromUploads()  :164
 ```
@@ -270,7 +270,7 @@ error; the limits shown in the UI now come from the running configuration.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:47, :48` | Single and batch upload |
+| `routes/web.php:67, :48` | Single and batch upload |
 | `app/Http/Controllers/PaperController.php` | `create()` :108, `store()` :113, `storeBatch()` :71 |
 | `app/Http/Requests/StorePaperRequest.php` | `prepareForValidation()` :26, `rules()` :40 |
 | `app/Http/Requests/StorePapersBatchRequest.php` | Up to 20 files |
@@ -385,11 +385,11 @@ response checked for the PDF magic bytes before it is stored.
 ### Code path
 
 ```
-GET    /papers/{paper}          routes/web.php:49  -> PaperController::show()    :52
-GET    /papers/{paper}/edit     routes/web.php:50  -> PaperController::edit()    :128
-PUT    /papers/{paper}          routes/web.php:51  -> PaperController::update()  :143
-DELETE /papers/{paper}          routes/web.php:52  -> PaperController::destroy() :170
-PATCH  /papers/{paper}/status   routes/web.php:54  -> PaperController::updateStatus() :182
+GET    /papers/{paper}          routes/web.php:69  -> PaperController::show()    :52
+GET    /papers/{paper}/edit     routes/web.php:85  -> PaperController::edit()    :128
+PUT    /papers/{paper}          routes/web.php:71  -> PaperController::update()  :143
+DELETE /papers/{paper}          routes/web.php:72  -> PaperController::destroy() :170
+PATCH  /papers/{paper}/status   routes/web.php:74  -> PaperController::updateStatus() :182
 ```
 
 ### The three statuses — `app/Enums/ReadingStatus.php:14-16`
@@ -403,7 +403,7 @@ case Read    = 'read';
 `label()` :18 and `badgeClasses()` :28 keep the wording and the colour in the
 enum, so the badge cannot drift from the value.
 
-### Changing status — `app/Http/Controllers/PaperController.php:182-209`
+### Changing status — `app/Http/Controllers/PaperController.php:201-228`
 
 ```php
 public function updateStatus(Request $request, Paper $paper, ActivityService $activities): RedirectResponse
@@ -543,7 +543,7 @@ returning a silent success.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:59-68` | Collection CRUD and paper attach/detach |
+| `routes/web.php:79-88` | Collection CRUD and paper attach/detach |
 | `app/Http/Controllers/CollectionController.php` | `index()` :29, `store()` :43, `show()` :52, `update()` :85, `destroy()` :100, `addPaper()` :118, `removePaper()` :171 |
 | `app/Services/CollectionService.php` | `create()` :31, `addPapers()` :62, `removePaper()` :102 |
 | `app/Models/Collection.php` | `papers()` :33, `scopeAccessibleBy()` :76 |
@@ -612,11 +612,11 @@ Tags are per-user: `scopeOwnedBy` (`app/Models/Tag.php:31`) plus `TagPolicy`.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:87-90` | Tag CRUD |
+| `routes/web.php:110-113` | Tag CRUD |
 | `app/Http/Controllers/TagController.php` | `index()` :15, `store()` :27, `update()` :37, `destroy()` :51 |
 | `app/Models/Tag.php` | `papers()` :26, `scopeOwnedBy()` :31, `contrastingTextColor()` :42 |
 | `app/Http/Requests/StoreTagRequest.php`, `UpdateTagRequest.php` | Hex validation |
-| `app/Models/Paper.php` | `scopeWithTag()` :162 |
+| `app/Models/Paper.php` | `scopeWithTag()` :156 |
 | `resources/views/tags/index.blade.php` | Tag manager |
 | `tests/Feature/TagSmokeTest.php` | Tests |
 
@@ -654,7 +654,7 @@ add it**. It is now unique on `(user_id, doi)`.
 | 3 | `MetadataService::lookup()` :38 | Built |
 | 4 | `PaperController::updateStatus()` :182, `reading-status.blade.php` | Built |
 | 5 | `collection_paper` pivot, `CollectionService` :62, :102 | Built |
-| 6 | `TagController`, `Paper::scopeWithTag()` :162 | Built |
+| 6 | `TagController`, `Paper::scopeWithTag()` :156 | Built |
 
 Run this module's tests from the project root:
 

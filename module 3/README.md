@@ -131,7 +131,7 @@ php artisan test --filter="AiLayer|SemanticSearch|SearchRelevance|ReviewSelectio
 
 That is **76 tests, 181 assertions**, all passing. Those nine test files are
 the Module 3 suite and are copied into `code/tests/`. The whole application
-suite is 309 tests.
+suite is 375 tests.
 
 ---
 

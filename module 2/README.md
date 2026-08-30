@@ -62,8 +62,8 @@ From the **project root**, not this folder:
 php artisan test --filter="Highlight|Note|NoteSecurity|PaperAiSections|ReaderAi|ChunkService|RunOnText|EmbeddingService"
 ```
 
-That is **69 tests, 195 assertions**, all passing. The whole application
-suite is 309 tests.
+That is **72 tests, 211 assertions**, all passing. The whole application
+suite is 375 tests.
 
 ---
 

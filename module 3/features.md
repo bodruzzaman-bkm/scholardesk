@@ -8,7 +8,7 @@ implements it, and the file it lives in.
 **Paths are relative to the project root.** Every file listed is also copied
 into this folder under `code/` at the same path — so
 `app/Services/RagService.php` is here as `code/app/Services/RagService.php`.
-Line numbers were taken from the live source on 2026-08-24.
+Line numbers were re-verified against the live source on 2026-08-31.
 
 **Status: five of five implemented.** 76 tests, 181 assertions, all passing.
 
@@ -22,7 +22,7 @@ Line numbers were taken from the live source on 2026-08-24.
 ### Code path
 
 ```
-POST /ai/collections/{collection}/ask     routes/web.php:113
+POST /ai/collections/{collection}/ask     routes/web.php:137
   -> AiController::askCollection()        app/Http/Controllers/AiController.php:73
      -> RagService::askCollection()       app/Services/RagService.php:139
         -> VectorSearchService::search()  app/Services/VectorSearchService.php:70
@@ -32,7 +32,7 @@ POST /ai/collections/{collection}/ask     routes/web.php:113
   -> rendered by                          resources/views/components/ai/chat.blade.php
 ```
 
-### 1. The route — `routes/web.php:108-115`
+### 1. The route — `routes/web.php:133-139`
 
 Throttled, because every call spends the provider's token quota.
 
@@ -186,7 +186,7 @@ The `\b` word boundary is what stops `P1` matching inside `P12`.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:108-115` | Throttled AI routes |
+| `routes/web.php:133-139` | Throttled AI routes |
 | `app/Http/Controllers/AiController.php` | `askCollection()` :73, `guard()` :150 |
 | `app/Services/RagService.php` | `askCollection()` :139, `answer()` :225, `answerCites()` :310 |
 | `app/Services/VectorSearchService.php` | `search()` :70, `accessiblePaperIds()` :201 |
@@ -208,13 +208,13 @@ The `\b` word boundary is what stops `P1` matching inside `P12`.
 ### Code path
 
 ```
-GET /search                                 routes/web.php:37
+GET /search                                 routes/web.php:54
   -> SearchController::index()              app/Http/Controllers/SearchController.php:26
      |- semantic: VectorSearchService::searchPapers()  app/Services/VectorSearchService.php:131
      |            -> EmbeddingService::embed()          app/Services/EmbeddingService.php:49
      |            -> EmbeddingService::similarity()     app/Services/EmbeddingService.php:87
      '- keyword:  PaperService::paginateLibrary()       app/Services/PaperService.php:37
-                  -> filter scopes on                   app/Models/Paper.php:140-215
+                  -> filter scopes on                   app/Models/Paper.php:141-206
   -> rendered by                            resources/views/search/index.blade.php
 ```
 
@@ -269,31 +269,44 @@ public function paginateLibrary(int $userId, array $filters, int $perPage = 12):
 
 | Filter | Scope | Line |
 |---|---|---|
-| keyword | `scopeSearch` | `app/Models/Paper.php:140` |
-| tag | `scopeWithTag` | `app/Models/Paper.php:162` |
-| reading status | `scopeWithStatus` | `app/Models/Paper.php:171` |
-| year | `scopeWithYear` | `app/Models/Paper.php:180` |
-| author | `scopeWithAuthor` | `app/Models/Paper.php:196` |
-| venue | `scopeWithVenue` | `app/Models/Paper.php:207` |
+| keyword | `scopeSearch` | `app/Models/Paper.php:141` |
+| tag | `scopeWithTag` | `app/Models/Paper.php:156` |
+| reading status | `scopeWithStatus` | `app/Models/Paper.php:165` |
+| year | `scopeWithYear` | `app/Models/Paper.php:174` |
+| author | `scopeWithAuthor` | `app/Models/Paper.php:190` |
+| venue | `scopeWithVenue` | `app/Models/Paper.php:199` |
 
-Keyword search escapes LIKE wildcards explicitly — `app/Models/Paper.php:148-159`:
+Keyword search delegates to `App\Support\Search` — `app/Models/Paper.php:141-151`:
 
 ```php
-// Escape LIKE wildcards so that searching for "%" or "_" looks for
-// those characters instead of matching everything.
-$escaped = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%';
+public function scopeSearch(Builder $query, ?string $term): Builder
+{
+    $term = trim((string) $term);
 
-// SQLite has no default LIKE escape character (MySQL uses backslash),
-// so the ESCAPE clause is stated explicitly to behave the same on both.
-return $query->where(function (Builder $q) use ($escaped) {
-    foreach (['title', 'authors', 'abstract', 'venue', 'doi'] as $column) {
-        $q->orWhereRaw("{$column} LIKE ? ESCAPE '\\'", [$escaped]);
+    if ($term === '') {
+        return $query;
     }
-});
+
+    // Support\Search chooses LIKE or ILIKE for the driver, so this matches
+    // case-insensitively on Postgres as well as SQLite, and escapes the
+    // wildcards so a search for "50%" does not match every row. Column
+    // names are hard-coded there; only the value is bound.
+    return Search::anyColumn($query, ['title', 'authors', 'abstract', 'venue', 'doi'], $term);
+}
 ```
 
+**That helper exists because the drivers disagree silently.** SQLite's `LIKE`
+is case-insensitive for ASCII; Postgres's is case-*sensitive*, and `ILIKE` is
+the insensitive form. A library that searched correctly on SQLite would have
+quietly stopped matching "Attention" for a query of "attention" once deployed
+to Postgres — no error, just fewer results.
+`App\Support\Search::operator()` picks the right one per connection.
+
+Escaping matters for a second reason: without it, a search for `50%` matches
+every row, because `%` is the wildcard.
+
 Author is a substring match, because `authors` is a comma-separated string
-rather than a relation — `app/Models/Paper.php:196-204`:
+rather than a relation — `app/Models/Paper.php:190-197`:
 
 ```php
 public function scopeWithAuthor(Builder $query, mixed $author): Builder
@@ -302,9 +315,7 @@ public function scopeWithAuthor(Builder $query, mixed $author): Builder
         return $query;
     }
 
-    $escaped = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], trim((string) $author)).'%';
-
-    return $query->whereRaw("authors LIKE ? ESCAPE '\\'", [$escaped]);
+    return $query->whereRaw(Search::clause('authors'), [Search::pattern((string) $author)]);
 }
 ```
 
@@ -383,10 +394,10 @@ the floor only removes genuine noise and weak matches are **labelled** instead.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:37` | `GET /search` |
+| `routes/web.php:54` | `GET /search` |
 | `app/Http/Controllers/SearchController.php` | Mode switch :30, dispatch :36-44 |
 | `app/Services/PaperService.php` | `paginateLibrary()` :37, `filterOptions()` :259 |
-| `app/Models/Paper.php` | Six filter scopes, :140-215 |
+| `app/Models/Paper.php` | Six filter scopes, :141-206 |
 | `app/Services/VectorSearchService.php` | `searchPapers()` :131, `rank()` :158, thresholds :31-61 |
 | `app/Services/EmbeddingService.php` | `embed()` :49, `similarity()` :87 |
 | `resources/views/search/index.blade.php` | Search UI, mode toggle, filter controls |
@@ -402,14 +413,14 @@ the floor only removes genuine noise and weak matches are **labelled** instead.
 ### Code path
 
 ```
-GET /ai/papers/{paper}/related                routes/web.php:116  (NOT throttled)
+GET /ai/papers/{paper}/related                routes/web.php:140  (NOT throttled)
   -> AiController::related()                  app/Http/Controllers/AiController.php:124
      -> VectorSearchService::relatedPapers()   app/Services/VectorSearchService.php:96
         -> EmbeddingService::centroid()        app/Services/EmbeddingService.php:125
   -> rendered by                              resources/views/components/ai/related.blade.php
 ```
 
-### 1. The route sits outside the throttle group — `routes/web.php:116`
+### 1. The route sits outside the throttle group — `routes/web.php:140`
 
 ```php
 Route::get('/ai/papers/{paper}/related', [AiController::class, 'related'])->name('ai.paper.related');
@@ -495,7 +506,7 @@ Two decisions worth pointing at:
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:116` | Un-throttled JSON endpoint |
+| `routes/web.php:140` | Un-throttled JSON endpoint |
 | `app/Http/Controllers/AiController.php` | `related()` :124 |
 | `app/Services/VectorSearchService.php` | `relatedPapers()` :96 |
 | `app/Services/EmbeddingService.php` | `centroid()` :125 |
@@ -511,7 +522,7 @@ Two decisions worth pointing at:
 ### Code path
 
 ```
-POST /ai/collections/{collection}/review    routes/web.php:114
+POST /ai/collections/{collection}/review    routes/web.php:138
   -> AiController::review()                 app/Http/Controllers/AiController.php:95
      -> RagService::draftReview()           app/Services/RagService.php:157
         -> AiService::generate()            app/Services/AiService.php
@@ -636,7 +647,7 @@ Plus Select-all / None controls at lines 46-47.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:114` | Throttled review endpoint |
+| `routes/web.php:138` | Throttled review endpoint |
 | `app/Http/Controllers/AiController.php` | `review()` :95, selection validation :99-107 |
 | `app/Services/RagService.php` | `draftReview()` :157, prompt :184, persistence :206 |
 | `app/Models/LiteratureReview.php` | The saved draft, `paper_ids` cast |
@@ -654,11 +665,11 @@ Plus Select-all / None controls at lines 46-47.
 ### Code path
 
 ```
-GET /papers/{paper}/export?format=…            routes/web.php:55
+GET /papers/{paper}/export?format=…            routes/web.php:75
   -> PaperController::export()                 app/Http/Controllers/PaperController.php:250
      -> CitationService::format()              app/Services/CitationService.php:20
 
-GET /collections/{collection}/export?format=…  routes/web.php:64
+GET /collections/{collection}/export?format=…  routes/web.php:84
   -> CollectionController::export()            app/Http/Controllers/CollectionController.php:194
      -> CitationService::formatMany()          app/Services/CitationService.php:30
 ```
@@ -774,7 +785,7 @@ instead of parsing `al.` as a surname.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:55, :64` | Per-paper and per-collection export |
+| `routes/web.php:75, :84` | Per-paper and per-collection export |
 | `app/Services/CitationService.php` | `FORMATS` :18, `format()` :20, `formatMany()` :30, `bibtex()` :39, `apa()` :61, `plainText()` :85, `citationKey()` :99 |
 | `app/Http/Controllers/PaperController.php` | `export()` :250 |
 | `app/Http/Controllers/CollectionController.php` | `export()` :194 |
@@ -810,7 +821,7 @@ Feature hashing over word tokens and character trigrams, L2-normalised. It
 needs no API key, which is why requirements 12 and 13 work with no provider
 configured at all.
 
-`POST /papers/{paper}/reindex` (`routes/web.php:56`) retries a failed
+`POST /papers/{paper}/reindex` (`routes/web.php:91`) retries a failed
 extraction.
 
 ---
@@ -820,7 +831,7 @@ extraction.
 | # | Feature | Primary implementation | Status |
 |---|---|---|---|
 | 11 | Collection Q&A with citations | `RagService::askCollection()` :139, `answer()` :225 | Built |
-| 12 | Semantic + keyword search, 5 filters | `SearchController::index()` :26, `Paper` scopes :140-215 | Built |
+| 12 | Semantic + keyword search, 5 filters | `SearchController::index()` :26, `Paper` scopes :141-206 | Built |
 | 13 | Related papers | `VectorSearchService::relatedPapers()` :96 | Built |
 | 14 | Literature-review draft | `RagService::draftReview()` :157 | Built |
 | 15 | Citation export | `CitationService` :18-130 | Built |

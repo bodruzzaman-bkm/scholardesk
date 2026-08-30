@@ -8,9 +8,9 @@ implements it, and the file it lives in.
 **Paths are relative to the project root.** Every file listed is also copied
 into this folder under `code/` at the same path — so
 `app/Services/RagService.php` is here as `code/app/Services/RagService.php`.
-Line numbers were taken from the live source on 2026-08-24.
+Line numbers were re-verified against the live source on 2026-08-31.
 
-**Status: four of four implemented.** 69 tests, 195 assertions, all passing.
+**Status: four of four implemented.** 72 tests, 211 assertions, all passing.
 
 ---
 
@@ -22,14 +22,14 @@ Line numbers were taken from the live source on 2026-08-24.
 ### Code path
 
 ```
-GET /papers/{paper}/read              routes/web.php:53
+GET /papers/{paper}/read              routes/web.php:73
   -> PaperController::read()          app/Http/Controllers/PaperController.php:212
   -> resources/views/papers/read.blade.php   (pdf.js renders the document)
 
-GET    /papers/{paper}/highlights     routes/web.php:93  -> HighlightController::index()
-POST   /papers/{paper}/highlights     routes/web.php:94  -> HighlightController::store()
-PATCH  /highlights/{highlight}        routes/web.php:95  -> HighlightController::update()
-DELETE /highlights/{highlight}        routes/web.php:96  -> HighlightController::destroy()
+GET    /papers/{paper}/highlights     routes/web.php:117  -> HighlightController::index()
+POST   /papers/{paper}/highlights     routes/web.php:118  -> HighlightController::store()
+PATCH  /highlights/{highlight}        routes/web.php:119  -> HighlightController::update()
+DELETE /highlights/{highlight}        routes/web.php:120  -> HighlightController::destroy()
 ```
 
 ### 1. Opening the reader — `app/Http/Controllers/PaperController.php:212-229`
@@ -146,7 +146,7 @@ public function annotate(User $user, Paper $paper): bool
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:53, :93-96` | Reader and highlight endpoints |
+| `routes/web.php:73, :117-120` | Reader and highlight endpoints |
 | `app/Http/Controllers/PaperController.php` | `read()` :212, `chatHistoryFor()` :236 |
 | `app/Http/Controllers/HighlightController.php` | `index()` :20, `store()` :33, `update()` :69, `destroy()` :84 |
 | `app/Models/Highlight.php` | `position` cast :12 |
@@ -163,10 +163,10 @@ public function annotate(User $user, Paper $paper): bool
 ### Code path
 
 ```
-POST   /papers/{paper}/notes   routes/web.php:99   -> NoteController::store()   :19
-GET    /notes/{note}/edit      routes/web.php:100  -> NoteController::edit()    :38
-PUT    /notes/{note}           routes/web.php:101  -> NoteController::update()  :46
-DELETE /notes/{note}           routes/web.php:102  -> NoteController::destroy() :62
+POST   /papers/{paper}/notes   routes/web.php:123   -> NoteController::store()   :19
+GET    /notes/{note}/edit      routes/web.php:124  -> NoteController::edit()    :38
+PUT    /notes/{note}           routes/web.php:125  -> NoteController::update()  :46
+DELETE /notes/{note}           routes/web.php:126  -> NoteController::destroy() :62
 ```
 
 ### Writing a note — `app/Http/Controllers/NoteController.php:19-35`
@@ -234,7 +234,7 @@ key their order flipped between page loads.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:99-102` | Note CRUD |
+| `routes/web.php:123-126` | Note CRUD |
 | `app/Http/Controllers/NoteController.php` | `store()` :19, `edit()` :38, `update()` :46, `destroy()` :62 |
 | `app/Models/Note.php` | The note |
 | `app/Policies/NotePolicy.php` | Author-only edit and delete |
@@ -252,7 +252,7 @@ key their order flipped between page loads.
 ### Code path
 
 ```
-POST /ai/papers/{paper}/summary        routes/web.php:111  (throttle:20,1)
+POST /ai/papers/{paper}/summary        routes/web.php:135  (throttle:20,1)
   -> AiController::summarize()         app/Http/Controllers/AiController.php:29
      -> RagService::summarizePaper()   app/Services/RagService.php:54
         -> AiService::generate()       app/Services/AiService.php
@@ -325,7 +325,7 @@ retrieving chunks — there is no question to retrieve against.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:111` | Throttled summary endpoint |
+| `routes/web.php:135` | Throttled summary endpoint |
 | `app/Http/Controllers/AiController.php` | `summarize()` :29, `guard()` :150 |
 | `app/Services/RagService.php` | `summarizePaper()` :54 |
 | `app/Services/AiService.php` | Groq / Gemini calls, budgets, 413-vs-429 |
@@ -343,7 +343,7 @@ retrieving chunks — there is no question to retrieve against.
 ### Code path
 
 ```
-POST /ai/papers/{paper}/ask            routes/web.php:112  (throttle:20,1)
+POST /ai/papers/{paper}/ask            routes/web.php:136  (throttle:20,1)
   -> AiController::askPaper()          app/Http/Controllers/AiController.php:38
      -> RagService::askPaper()         app/Services/RagService.php:90
         -> VectorSearchService::search()  app/Services/VectorSearchService.php:70
@@ -438,7 +438,7 @@ asked while reading is still there afterwards, and vice versa.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:112` | Throttled Q&A endpoint |
+| `routes/web.php:136` | Throttled Q&A endpoint |
 | `app/Http/Controllers/AiController.php` | `askPaper()` :38 |
 | `app/Services/RagService.php` | `askPaper()` :90, `answer()` :225, `sessionFor()` :315 |
 | `app/Services/VectorSearchService.php` | `search()` :70, paper scope :203 |
@@ -482,7 +482,7 @@ result on that document:
 
 `tests/Unit/RunOnTextTest.php` covers it.
 
-`POST /papers/{paper}/reindex` (`routes/web.php:56`) retries a failed
+`POST /papers/{paper}/reindex` (`routes/web.php:91`) retries a failed
 extraction.
 
 ---

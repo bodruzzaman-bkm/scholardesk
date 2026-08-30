@@ -8,8 +8,8 @@ implements it, and the file it lives in.
 **Paths are relative to the project root.** Every file listed is also copied
 into this folder under `code/` at the same path — so
 `app/Services/ExportService.php` is here as
-`code/app/Services/ExportService.php`. Line numbers were taken from the live
-source on 2026-08-28.
+`code/app/Services/ExportService.php`. Line numbers were re-verified against
+the live source on 2026-08-31.
 
 **Status: seven of seven implemented.** 98 tests, 299 assertions, all passing.
 
@@ -31,7 +31,7 @@ source on 2026-08-28.
 ### Code path
 
 ```
-GET /collections/{collection}/bundle       routes/web.php:70
+GET /collections/{collection}/bundle       routes/web.php:85
   -> CollectionController::bundle()        app/Http/Controllers/CollectionController.php:182
      -> ExportService::collectionArchive() app/Services/ExportService.php:134
         -> ExportService::collectionBundle()  :24    the markdown document
@@ -108,7 +108,7 @@ markdown document only ever contains the requesting user's notes
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:70` | The bundle download |
+| `routes/web.php:85` | The bundle download |
 | `app/Http/Controllers/CollectionController.php` | `bundle()` :182 |
 | `app/Services/ExportService.php` | `collectionArchive()` :134, `collectionBundle()` :24, `pdfName()` :189 |
 | `app/Services/CitationService.php` | `formatMany()` for `bibliography.bib` |
@@ -124,7 +124,7 @@ markdown document only ever contains the requesting user's notes
 ### Code path
 
 ```
-POST   /collections/{collection}/members            routes/web.php:76
+POST   /collections/{collection}/members            routes/web.php:91
   -> CollectionMemberController::store()            app/Http/Controllers/CollectionMemberController.php:17
      -> CollectionService::addMember()              app/Services/CollectionService.php:118
 PATCH  /collections/{collection}/members/{member}   -> update()  :39
@@ -188,7 +188,7 @@ removed (`:166`).
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:76-78` | Member management |
+| `routes/web.php:91-93` | Member management |
 | `app/Http/Controllers/CollectionMemberController.php` | `store()` :17, `update()` :39, `destroy()` :53 |
 | `app/Services/CollectionService.php` | `create()` :31, `addMember()` :118, `changeMemberRole()` :154, `removeMember()` :166 |
 | `app/Enums/MemberRole.php` | `rank()` :32, `atLeast()` :42 |
@@ -205,9 +205,9 @@ removed (`:166`).
 ### Code path
 
 ```
-POST   /collections/{collection}/comments   routes/web.php:81
+POST   /collections/{collection}/comments   routes/web.php:120
   -> CommentController::store()             app/Http/Controllers/CommentController.php:25
-POST   /papers/{paper}/comments             routes/web.php:82      <- NEW
+POST   /papers/{paper}/comments             routes/web.php:97      <- NEW
   -> CommentController::storePaper()        app/Http/Controllers/CommentController.php:72
 PUT    /comments/{comment}                  -> update()  :128
 DELETE /comments/{comment}                  -> destroy() :141
@@ -316,7 +316,7 @@ when both are gone.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:81-84` | Both comment entry points |
+| `routes/web.php:120-99` | Both comment entry points |
 | `app/Http/Controllers/CommentController.php` | `store()` :25, `storePaper()` :72, `notifyPaperAudience()` :107 |
 | `app/Models/Comment.php` | `replies()`, `roots()`, `displayContent()` |
 | `app/Policies/CommentPolicy.php`, `PaperPolicy.php` | Who may edit, delete, comment |
@@ -431,7 +431,7 @@ public function notifyMany(iterable $users, NotificationType $type, string $mess
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:86-89` | Index, unread count, mark read, mark all |
+| `routes/web.php:105-108` | Index, unread count, mark read, mark all |
 | `app/Services/NotificationService.php` | `notify()` :20, `notifyMany()` :37, `email()` :58 |
 | `app/Http/Controllers/NotificationController.php` | The page and the JSON count |
 | `app/Models/InAppNotification.php`, `app/Enums/NotificationType.php` | The row and its five types |
@@ -447,7 +447,7 @@ public function notifyMany(iterable $users, NotificationType $type, string $mess
 ### Code path
 
 ```
-GET /analytics                             routes/web.php:42       <- NEW
+GET /analytics                             routes/web.php:57       <- NEW
   -> AnalyticsController::index()          app/Http/Controllers/AnalyticsController.php:25
      -> AnalyticsService                   app/Services/AnalyticsService.php
   -> rendered by                           resources/views/analytics/index.blade.php
@@ -513,7 +513,7 @@ rather than dividing by zero, which `AnalyticsTest` asserts explicitly.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:42` | `GET /analytics` |
+| `routes/web.php:57` | `GET /analytics` |
 | `app/Http/Controllers/AnalyticsController.php` | `index()` :25 |
 | `app/Services/AnalyticsService.php` | Five breakdowns, `papersByVenue()` :83 |
 | `resources/views/analytics/index.blade.php` | The page |
@@ -529,7 +529,7 @@ rather than dividing by zero, which `AnalyticsTest` asserts explicitly.
 
 Four separate obligations. Each one:
 
-### 1. Manage user accounts and roles — `app/Http/Controllers/AdminController.php:53, :71`
+### 1. Manage user accounts and roles — `app/Http/Controllers/AdminController.php:54, :72`
 
 ```php
 // An administrator must not be able to strip their own access and
@@ -592,7 +592,7 @@ Re-reporting is `updateOrCreate`, not `create` — the unique index would
 otherwise turn a second report from the same person into a 500
 (`ReportController.php:60-72`).
 
-**Working the queue** — `AdminController::reports()` :116 and
+**Working the queue** — `AdminController::reports()` :117 and
 `resolveReport()` :141:
 
 ```php
@@ -612,7 +612,7 @@ The queue renders even when the reported item has since been deleted
 (`admin/reports.blade.php`) — a report whose target vanished must not take the
 whole page down.
 
-### 3. System-wide statistics — `AdminController::index()` :28
+### 3. System-wide statistics — `AdminController::index()` :29
 
 Users, administrators, papers, collections, notes, highlights, comments,
 indexed papers, chunks, **open reports**, and storage used.
@@ -628,8 +628,8 @@ the other fails the suite rather than silently falling back to English.
 
 | File | What it contributes |
 |---|---|
-| `routes/web.php:87, :129-135` | Reporting and the admin portal |
-| `app/Http/Controllers/AdminController.php` | `index()` :28, `users()` :53, `updateRole()` :71, `comments()` :89, `toggleCommentVisibility()` :103, `reports()` :116, `resolveReport()` :141 |
+| `routes/web.php:126, :143-150` | Reporting and the admin portal |
+| `app/Http/Controllers/AdminController.php` | `index()` :29, `users()` :54, `updateRole()` :72, `comments()` :90, `toggleCommentVisibility()` :104, `reports()` :117, `resolveReport()` :142 |
 | `app/Http/Controllers/ReportController.php` | `store()` :39, `authorizeVisibility()` :83 |
 | `app/Models/Report.php`, `app/Enums/ReportStatus.php` | The report and its lifecycle |
 | `app/Http/Middleware/EnsureUserIsAdmin.php` | The `admin` gate |
@@ -650,7 +650,7 @@ the other fails the suite rather than silently falling back to English.
 | 19 | Activity feed | `ActivityService::record()` :21 | Built |
 | 20 | Notifications, in-app + email | `NotificationService::notify()` :20 | Built |
 | 21 | Analytics with venue | `AnalyticsService::papersByVenue()` :83 | Built |
-| 22 | Admin, reporting, EN/BN | `ReportController` + `AdminController::reports()` :116 | Built |
+| 22 | Admin, reporting, EN/BN | `ReportController` + `AdminController::reports()` :117 | Built |
 
 Run this module's tests from the project root:
 
