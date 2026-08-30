@@ -144,6 +144,15 @@ class AdminController extends Controller
      */
     public function toggleCommentVisibility(Comment $comment): RedirectResponse
     {
+        /*
+         | Belt and braces. The route already sits inside the `admin`
+         | middleware group, so this cannot currently fail — but CommentPolicy
+         | declares moderation as an administrator-only action and nothing was
+         | consulting it, which made the policy a comment rather than a rule.
+         | If this action is ever routed outside that group, the policy holds.
+         */
+        $this->authorize('moderate', $comment);
+
         $comment->update(['is_hidden' => ! $comment->is_hidden]);
 
         return back()->with('success', $comment->is_hidden ? 'Comment hidden.' : 'Comment restored.');
