@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PaperSource;
 use App\Enums\ReadingStatus;
+use App\Support\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -145,18 +146,11 @@ class Paper extends Model
             return $query;
         }
 
-        // Escape LIKE wildcards so that searching for "%" or "_" looks for
-        // those characters instead of matching everything.
-        $escaped = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%';
-
-        // SQLite has no default LIKE escape character (MySQL uses backslash),
-        // so the ESCAPE clause is stated explicitly to behave the same on both.
-        // Column names are hard-coded; only the value is bound.
-        return $query->where(function (Builder $q) use ($escaped) {
-            foreach (['title', 'authors', 'abstract', 'venue', 'doi'] as $column) {
-                $q->orWhereRaw("{$column} LIKE ? ESCAPE '\\'", [$escaped]);
-            }
-        });
+        // Support\Search chooses LIKE or ILIKE for the driver, so this matches
+        // case-insensitively on Postgres as well as SQLite, and escapes the
+        // wildcards so a search for "50%" does not match every row. Column
+        // names are hard-coded there; only the value is bound.
+        return Search::anyColumn($query, ['title', 'authors', 'abstract', 'venue', 'doi'], $term);
     }
 
     public function scopeWithTag(Builder $query, mixed $tagId): Builder
@@ -199,9 +193,7 @@ class Paper extends Model
             return $query;
         }
 
-        $escaped = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], trim((string) $author)).'%';
-
-        return $query->whereRaw("authors LIKE ? ESCAPE '\\'", [$escaped]);
+        return $query->whereRaw(Search::clause('authors'), [Search::pattern((string) $author)]);
     }
 
     public function scopeWithVenue(Builder $query, mixed $venue): Builder

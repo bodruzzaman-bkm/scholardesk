@@ -12,6 +12,7 @@ use App\Models\Paper;
 use App\Models\PaperChunk;
 use App\Models\Report;
 use App\Models\User;
+use App\Support\Search;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,10 +54,10 @@ class AdminController extends Controller
     public function users(Request $request): View
     {
         $users = User::query()
-            ->when($request->query('q'), function ($q, $term) {
-                $like = '%'.$term.'%';
-                $q->where(fn ($w) => $w->where('name', 'like', $like)->orWhere('email', 'like', $like));
-            })
+            // Search, not `like`: Postgres LIKE is case-sensitive, so looking
+            // up "Vaskar" would miss "vaskar@..." once deployed. It also
+            // escapes the wildcards the raw '%'.$term.'%' left open.
+            ->when($request->query('q'), fn ($q, $term) => Search::anyColumn($q, ['name', 'email'], $term))
             ->withCount(['papers', 'collections'])
             ->latest()
             ->paginate(20)
