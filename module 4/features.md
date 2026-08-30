@@ -564,7 +564,7 @@ rather than dividing by zero, which `AnalyticsTest` asserts explicitly.
 
 Four separate obligations. Each one:
 
-### 1. Manage user accounts and roles — `app/Http/Controllers/AdminController.php:54, :72, :90`
+### 1. Manage user accounts and roles — `app/Http/Controllers/AdminController.php:54, :72, :101`
 
 Roles first. An administrator cannot demote themselves, because doing so is
 unrecoverable without database access:
@@ -583,7 +583,7 @@ bad account: the report queue could surface an abusive user, and the only
 available response was hiding their comments one at a time — which makes
 "moderate reported content" a gesture rather than a power.
 
-`toggleSuspension()` (`AdminController.php:90`) is that lever. **Suspension
+`toggleSuspension()` (`AdminController.php:101`) is that lever. **Suspension
 rather than deletion**, deliberately: deleting a user cascades through their
 papers, collections, notes, highlights and comments, so it destroys a library
 to silence an account and cannot be undone. A suspended user keeps everything
@@ -659,7 +659,7 @@ Re-reporting is `updateOrCreate`, not `create` — the unique index would
 otherwise turn a second report from the same person into a 500
 (`ReportController.php:60-72`).
 
-**Working the queue** — `AdminController::reports()` :117 and
+**Working the queue** — `AdminController::reports()` :167 and
 `resolveReport()` :141:
 
 ```php
@@ -671,6 +671,15 @@ otherwise turn a second report from the same person into a 500
  * a report is valid and still leave the content up.
  */
 ```
+
+**Hiding a comment now consults the policy that describes it.**
+`CommentPolicy::moderate()` declared moderation as administrator-only and
+nothing called it — the rule was a comment rather than a check. Access held
+regardless, because the route sits inside the `admin` middleware group, so
+this was never a hole. But it is the same shape as the gaps found in
+requirements 19, 20 and 22: something declared and never wired, invisible
+because nothing errors. `toggleCommentVisibility()` (`:145`) authorizes now,
+so the rule survives the route being moved.
 
 `ReportStatus` keeps Resolved and Dismissed distinct rather than collapsing
 them into "closed", so the record of which reporters were right survives.
@@ -696,7 +705,7 @@ the other fails the suite rather than silently falling back to English.
 | File | What it contributes |
 |---|---|
 | `routes/web.php:102, :143-150` | Reporting and the admin portal |
-| `app/Http/Controllers/AdminController.php` | `index()` :29, `users()` :54, `updateRole()` :72, `comments()` :90, `toggleCommentVisibility()` :104, `reports()` :117, `resolveReport()` :142 |
+| `app/Http/Controllers/AdminController.php` | `index()` :29, `users()` :54, `updateRole()` :72, `toggleSuspension()` :101, `comments()` :131, `toggleCommentVisibility()` :145, `reports()` :167, `resolveReport()` :192 |
 | `app/Http/Controllers/ReportController.php` | `store()` :39, `authorizeVisibility()` :83 |
 | `app/Models/Report.php`, `app/Enums/ReportStatus.php` | The report and its lifecycle |
 | `app/Http/Middleware/EnsureUserIsAdmin.php` | The `admin` gate |
@@ -717,7 +726,7 @@ the other fails the suite rather than silently falling back to English.
 | 19 | Activity feed | `ActivityService::record()` :21 | Built |
 | 20 | Notifications, in-app + email | `NotificationService::notify()` :20 | Built |
 | 21 | Analytics with venue | `AnalyticsService::papersByVenue()` :83 | Built |
-| 22 | Admin, reporting, EN/BN | `ReportController` + `AdminController::reports()` :117 | Built |
+| 22 | Admin, reporting, EN/BN | `ReportController` + `AdminController::reports()` :167 | Built |
 
 Run this module's tests from the project root:
 
