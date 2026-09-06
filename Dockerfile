@@ -60,36 +60,37 @@ RUN composer config --global process-timeout 600 \
 FROM php:8.4-cli-alpine
 
 # The official PHP image already bundles mbstring, dom, simplexml, iconv,
-# openssl, curl, fileinfo and pdo_sqlite, which covers everything composer.lock
-# requires. Added here are the ones it does NOT ship:
-#   zip      — composer package extraction
-#   intl     — locale-aware formatting used by the bilingual UI
-#   bcmath   — arbitrary-precision arithmetic Laravel expects
+# openssl, curl, fileinfo, zlib and pdo_sqlite, which between them satisfy
+# every ext-* in composer.lock. Only two are added:
+#   zip      — ExportService builds the collection archive with ZipArchive
 #   opcache  — compiled-script cache; a large win for a PHP app under load
-#   pdo_pgsql— Postgres. Hosts without a persistent disk cannot keep a SQLite
-#              file, so the database moves to a managed Postgres there. SQLite
-#              still works where a volume exists; both drivers ship.
+#
+# Three were removed, having been built for years without being used:
+#   intl     — the comment here claimed the bilingual UI needed it. It does
+#              not: translation goes through lang/ and Laravel's own
+#              translator, and nothing in the app calls Number::, a formatter
+#              or a collator. It brought in icu-dev, the single most expensive
+#              package in this build.
+#   bcmath   — nothing calls a bc* function, and nothing requires it.
+#   pdo_pgsql— there is no Postgres any more. render.yaml declared one, could
+#              not create it, and now uses SQLite like every other target.
+#
+# What that leaves is two compiled extensions instead of five, and no icu-dev
+# or postgresql-dev to fetch and build against, which is most of the wall
+# clock of a cold build.
+#
 # gd is deliberately absent: smalot/pdfparser only needs it for image
 # extraction, and this app reads text.
 RUN apk add --no-cache \
       sqlite-libs \
       libzip \
-      icu-libs \
       oniguruma \
-      libpq \
     && apk add --no-cache --virtual .build-deps \
       $PHPIZE_DEPS \
-      sqlite-dev \
       libzip-dev \
-      icu-dev \
-      oniguruma-dev \
-      postgresql-dev \
     && docker-php-ext-install -j"$(nproc)" \
       zip \
-      intl \
-      bcmath \
       opcache \
-      pdo_pgsql \
     && apk del .build-deps
 
 # Uploads: the app caps a PDF at 10 MB, so the request ceiling is set above it

@@ -48,7 +48,13 @@ services:
     dockerfilePath: ./Dockerfile
 
     # Render sends traffic to $PORT, which the entrypoint honours.
-    healthCheckPath: /
+    #
+    # /up rather than /: it is the health endpoint Laravel registers in
+    # bootstrap/app.php, and it answers 200 without rendering a view, opening
+    # a session or touching the database. / happens to return 200 too, but it
+    # renders the welcome page to do it, which makes the check sensitive to
+    # things that have nothing to do with whether the process is alive.
+    healthCheckPath: /up
 
     envVars:
       - key: APP_NAME
