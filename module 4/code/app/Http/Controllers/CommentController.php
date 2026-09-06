@@ -28,12 +28,23 @@ class CommentController extends Controller
 
         $validated = $request->validate([
             'content' => ['required', 'string', 'max:5000'],
-            // A reply's parent must live in this same collection, or a crafted
-            // id could graft a reply onto another collection's thread.
+            /*
+             | A reply's parent must live in this same collection, or a crafted
+             | id could graft a reply onto another collection's thread.
+             |
+             | It must also be a root comment. Threads are one level deep by
+             | design — the component says so and only renders a reply form on
+             | roots — but that was enforced in the UI alone, so a hand-made
+             | POST could reply to a reply. The Blade component recurses, and
+             | only one level of replies is eager-loaded, so every extra level
+             | cost another query and another indent.
+             */
             'parent_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('comments', 'id')->where('collection_id', $collection->id),
+                Rule::exists('comments', 'id')
+                    ->where('collection_id', $collection->id)
+                    ->whereNull('parent_id'),
             ],
             'paper_id' => [
                 'nullable',
@@ -75,12 +86,15 @@ class CommentController extends Controller
 
         $validated = $request->validate([
             'content' => ['required', 'string', 'max:5000'],
-            // A reply's parent must live on this same paper, or a crafted id
-            // could graft a reply onto another paper's thread.
+            // A reply's parent must live on this same paper, and must itself be
+            // a root comment — see the note in store() for why the one-level
+            // rule needs enforcing server-side and not only in the view.
             'parent_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('comments', 'id')->where('paper_id', $paper->id),
+                Rule::exists('comments', 'id')
+                    ->where('paper_id', $paper->id)
+                    ->whereNull('parent_id'),
             ],
         ]);
 

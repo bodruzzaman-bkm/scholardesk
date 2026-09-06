@@ -187,3 +187,59 @@ it('does not invent a feed entry for a paper in no collection', function () {
     expect(App\Models\Activity::count())->toBe(0)
         ->and(Comment::count())->toBe(1);
 });
+
+/*
+| The reply form is only rendered on top-level comments, and the comment
+| component documents the rule as "one level deep: threads ... cannot nest
+| forever". That was enforced in the UI alone: the server checked only that a
+| parent lived on the same paper, so a hand-made POST could reply to a reply.
+|
+| It matters twice over. The Blade component recurses, and only one level of
+| replies is eager-loaded, so each extra level costs another query; and the
+| indentation compounds until the thread is unreadable.
+*/
+it('refuses a reply to a reply on a paper, so threads stay one level deep', function () {
+    $user = User::factory()->create();
+    $paper = Paper::create(['title' => 'A paper', 'user_id' => $user->id]);
+
+    actingAs($user)->post(route('papers.comments.store', $paper), ['content' => 'Root']);
+    $root = Comment::firstOrFail();
+
+    actingAs($user)->post(route('papers.comments.store', $paper), [
+        'content' => 'A reply',
+        'parent_id' => $root->id,
+    ])->assertRedirect();
+
+    $reply = Comment::where('parent_id', $root->id)->firstOrFail();
+
+    // Replying to the reply is the case the UI never offers.
+    actingAs($user)->post(route('papers.comments.store', $paper), [
+        'content' => 'Reply to the reply',
+        'parent_id' => $reply->id,
+    ])->assertSessionHasErrors('parent_id');
+
+    expect(Comment::where('parent_id', $reply->id)->count())->toBe(0)
+        ->and(Comment::count())->toBe(2);
+});
+
+it('refuses a reply to a reply on a collection thread too', function () {
+    $user = User::factory()->create();
+    $collection = Collection::create(['name' => 'Shared', 'user_id' => $user->id]);
+
+    actingAs($user)->post(route('comments.store', $collection), ['content' => 'Root']);
+    $root = Comment::firstOrFail();
+
+    actingAs($user)->post(route('comments.store', $collection), [
+        'content' => 'A reply',
+        'parent_id' => $root->id,
+    ])->assertRedirect();
+
+    $reply = Comment::where('parent_id', $root->id)->firstOrFail();
+
+    actingAs($user)->post(route('comments.store', $collection), [
+        'content' => 'Too deep',
+        'parent_id' => $reply->id,
+    ])->assertSessionHasErrors('parent_id');
+
+    expect(Comment::count())->toBe(2);
+});
