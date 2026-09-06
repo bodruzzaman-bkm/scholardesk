@@ -197,4 +197,92 @@ class HighlightTest extends TestCase
             ->assertOk()
             ->assertSee('Select text on the PDF');
     }
+
+    /**
+     * A collaborator may open the reader — PaperPolicy::read admits collection
+     * members — but the highlights endpoint asked for `annotate`, which is
+     * owner-only. The two policies disagreed, so opening a shared PDF fired a
+     * 403 that the reader surfaced as an error banner on a page the user was
+     * perfectly entitled to.
+     *
+     * The list is already scoped to the requesting user, and a collaborator can
+     * never own a highlight on someone else's paper, so following `read` here
+     * returns an empty list rather than leaking anything.
+     */
+    public function test_a_collaborator_reading_a_shared_paper_gets_an_empty_highlight_list_not_a_403(): void
+    {
+        $owner = User::factory()->create();
+        $collaborator = User::factory()->create();
+
+        $paper = Paper::create([
+            'title' => 'Shared paper',
+            'user_id' => $owner->id,
+            // The reader redirects a paper with no PDF, and opening the reader
+            // is the whole reason the annotation layer gets called.
+            'file_path' => 'papers/example.pdf',
+        ]);
+
+        $collection = \App\Models\Collection::create([
+            'name' => 'Shared shelf',
+            'user_id' => $owner->id,
+        ]);
+        $collection->papers()->attach($paper->id);
+        \App\Models\CollectionMember::create([
+            'collection_id' => $collection->id,
+            'user_id' => $collaborator->id,
+            'role' => \App\Enums\MemberRole::Viewer,
+        ]);
+
+        // The owner's own highlight must not be exposed to the collaborator.
+        Highlight::create([
+            'paper_id' => $paper->id,
+            'user_id' => $owner->id,
+            'color' => '#ffeb3b',
+            'position' => ['page' => 1, 'rects' => [['left' => 1, 'top' => 2, 'width' => 3, 'height' => 4]]],
+        ]);
+
+        // They can open the reader...
+        $this->actingAs($collaborator)->get(route('papers.read', $paper))->assertOk();
+
+        // ...so the annotation layer must not 403 on them.
+        $this->actingAs($collaborator)
+            ->getJson(route('highlights.index', $paper))
+            ->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_a_stranger_still_cannot_list_highlights(): void
+    {
+        $owner = User::factory()->create();
+        $stranger = User::factory()->create();
+        $paper = Paper::create(['title' => 'Private', 'user_id' => $owner->id]);
+
+        $this->actingAs($stranger)
+            ->getJson(route('highlights.index', $paper))
+            ->assertForbidden();
+    }
+
+    public function test_a_collaborator_still_cannot_create_a_highlight(): void
+    {
+        $owner = User::factory()->create();
+        $collaborator = User::factory()->create();
+        $paper = Paper::create(['title' => 'Shared paper', 'user_id' => $owner->id]);
+
+        $collection = \App\Models\Collection::create(['name' => 'Shelf', 'user_id' => $owner->id]);
+        $collection->papers()->attach($paper->id);
+        \App\Models\CollectionMember::create([
+            'collection_id' => $collection->id,
+            'user_id' => $collaborator->id,
+            'role' => \App\Enums\MemberRole::Editor,
+        ]);
+
+        $this->actingAs($collaborator)
+            ->postJson(route('highlights.store', $paper), [
+                'color' => '#ffeb3b',
+                'position' => ['page' => 1, 'rects' => [['left' => 1, 'top' => 2, 'width' => 3, 'height' => 4]]],
+            ])
+            ->assertForbidden();
+
+        $this->assertSame(0, Highlight::count());
+    }
 }

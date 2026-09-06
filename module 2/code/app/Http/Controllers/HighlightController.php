@@ -16,10 +16,23 @@ use Illuminate\Support\Facades\Auth;
  */
 class HighlightController extends Controller
 {
-    // Fetch all highlights for a specific paper
+    /**
+     * Every highlight the requesting user has made on this paper.
+     *
+     * Gated on `read`, not `annotate`. The reader page itself is open to
+     * collaborators — PaperPolicy::read admits members of a collection holding
+     * the paper — but this endpoint used to demand `annotate`, which is
+     * owner-only. The two disagreed, so a collaborator opening a shared PDF
+     * triggered a 403 that the reader surfaced as an error banner on a page
+     * they were entitled to use.
+     *
+     * Relaxing it leaks nothing: the query is already scoped to the current
+     * user, and `annotate` still keeps anyone but the owner from creating a
+     * highlight in the first place, so a collaborator's list is simply empty.
+     */
     public function index(Paper $paper): JsonResponse
     {
-        $this->authorize('annotate', $paper);
+        $this->authorize('read', $paper);
 
         $highlights = $paper->highlights()
             ->where('user_id', Auth::id())
