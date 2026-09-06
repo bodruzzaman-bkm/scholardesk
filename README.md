@@ -175,16 +175,17 @@ Two hosts are supported. Both share the same `Dockerfile` and
 
 See **[docs/deploy-render.md](docs/deploy-render.md)** for the full walkthrough.
 
-`render.yaml` declares the web service and a managed Postgres, and needs no
-credit card. Because a free web service has no persistent disk, the database
-moves off the container to that Postgres.
+`render.yaml` declares one web service, needs no credit card, and deploys from
+a **private** repository — the site is public, the source stays private.
 
-Uploaded PDFs stay on the container, so the bytes of a paper uploaded on the
-live site are lost at the next restart — the paper, its notes and its
-highlights are in Postgres and survive. Two things follow from that, both
-worth knowing before a demo: a free service **sleeps when idle**, so the first
-request after a quiet spell takes 30–60 seconds *and* clears the uploads.
-Open the link a few minutes early.
+There is no database to create. A free web service has no persistent disk, so
+rather than half-persist the deployment behind a managed Postgres while the
+uploaded PDFs evaporated anyway, it commits to being ephemeral: SQLite on the
+container, rebuilt and reseeded on every boot. The site therefore returns to
+the same known library each time it starts, and nothing typed into it is kept.
+
+A free service **sleeps when idle**, so the first request after a quiet spell
+takes 30–60 seconds. Open the link a few minutes early.
 
 `DEMO_SEED=true` fills a fresh deployment with a worked library — twelve
 indexed papers, tags, shared collections, threaded comments and a moderation

@@ -1,33 +1,43 @@
 # ScholarDesk on Render — the free-tier deployment.
 #
-# No credit card is needed for any of this.
+# No credit card is needed for any of this, and no managed database either.
 #
-# Render's free web services have no persistent disk, so the database moves
-# off the container to a managed Postgres, created below.
+# There was a Postgres here, declared as a `databases:` block with plan: free,
+# and the blueprint would not apply with it. That is the whole reason it is
+# gone. The replacement is not a workaround so much as the better fit for what
+# this deployment actually is:
 #
-# Uploaded PDFs stay on the container, deliberately. Object storage was tried
-# here and removed: the app does not read the default disk. Every PDF path
-# goes through Storage::disk('public') explicitly — PaperService writes it,
-# ExportService reads it, and PdfTextService calls ->path() on it, which only
-# a local disk implements. So FILESYSTEM_DISK never moved an upload anywhere;
-# setting it to s3 only sent the entrypoint down a branch that skips the
-# public/storage symlink, and every PDF 404'd in the reader. It is 'public'
-# below so that the symlink is made and uploads are actually served.
+# A free web service has no persistent disk. Its filesystem is rebuilt from
+# the image every time it wakes, so a Postgres bought durability for the rows
+# while the uploaded PDFs beside them still evaporated — half-persistent, and
+# the half that survived was the half nobody would miss after a demonstration.
+# Committing to ephemeral makes the whole thing consistent: SQLite on the
+# container, seeded from scratch on every boot by DemoSeeder, so the service
+# comes up with the same worked library every single time. Nothing to expire,
+# nothing to wire, nothing to run out of a free-tier quota.
 #
-# The cost of that is honest and worth knowing: the container's filesystem is
-# rebuilt from the image on every restart, so a PDF uploaded during the demo
-# is gone once the service sleeps. Papers, notes, highlights, collections and
-# comments all live in Postgres and do survive — it is only the PDF bytes that
-# do not.
+# What that costs: anything typed into the live site is gone at the next
+# restart. For a demonstration that is close to a feature — the URL is never
+# in a half-edited state — but it is not storage, and must not be treated as
+# any.
 #
-# Everything else — the Dockerfile, the entrypoint, the app — is shared with
-# the Fly deployment, where a real volume at /data keeps the uploads too.
+# Uploaded PDFs stay on the container too. Object storage was tried and
+# removed: the app does not read the default disk. Every PDF path goes through
+# Storage::disk('public') explicitly — PaperService writes it, ExportService
+# reads it, and PdfTextService calls ->path() on it, which only a local disk
+# implements. So FILESYSTEM_DISK never moved an upload anywhere; setting it to
+# s3 only sent the entrypoint down a branch that skips the public/storage
+# symlink, and every PDF 404'd in the reader. It is 'public' below so that the
+# symlink is made and uploads are actually served.
 #
-# Two things to know about the free tier before you demo:
-#   * a free service sleeps after inactivity, so the first request after a
-#     quiet spell takes ~30-60s to wake. Open the link a minute early.
-#   * free Postgres instances expire. Check the current term in the Render
-#     dashboard and plan a dump before it lapses.
+# The Dockerfile and entrypoint are shared with the Fly deployment, where a
+# real volume at /data keeps both the database and the uploads. Nothing here
+# is Render-specific, and the image runs unprivileged, so it ports to any host
+# that will run a container.
+#
+# One thing to know before you demo: a free service sleeps after inactivity,
+# so the first request after a quiet spell takes ~30-60s to wake. Open the
+# link a minute early.
 
 services:
   - type: web
@@ -61,17 +71,21 @@ services:
         sync: false
 
       # --- Database ------------------------------------------------------
+      # SQLite on the container, rebuilt and reseeded on every boot. The
+      # entrypoint creates the file when DB_CONNECTION is sqlite, and
+      # DB_DATABASE has to name it explicitly or config/database.php falls
+      # back to database_path('database.sqlite') inside the image.
       - key: DB_CONNECTION
-        value: pgsql
-      # DB_URL, not DATABASE_URL: config/database.php reads env('DB_URL') for
-      # the pgsql connection, and Laravel parses the postgres:// string from it.
-      - key: DB_URL
-        fromDatabase:
-          name: scholardesk-db
-          property: connectionString
+        value: sqlite
+      - key: DB_DATABASE
+        value: /data/database.sqlite
+      - key: DATA_DIR
+        value: /data
 
-      # Sessions, cache and queue all sit in the database, so they follow it
-      # to Postgres automatically.
+      # Sessions and cache live in the database, which is now the same
+      # ephemeral file as everything else — so a restart signs everyone out.
+      # That is correct for this deployment: the accounts it signs you back in
+      # with are seeded and their password is documented.
       - key: SESSION_DRIVER
         value: database
       - key: CACHE_STORE
@@ -125,9 +139,3 @@ services:
         sync: false             # a Google App Password, not the account one
       - key: MAIL_FROM_ADDRESS
         sync: false
-
-databases:
-  - name: scholardesk-db
-    plan: free
-    databaseName: scholardesk
-    user: scholardesk

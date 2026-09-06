@@ -2,22 +2,25 @@
 #
 # Container start-up.
 #
-# Two deployment shapes are supported, because free hosts and Fly differ in
-# what they can keep:
+# What differs between hosts is only whether /data survives a restart:
 #
-#   volume   DB_CONNECTION=sqlite + a disk mounted at /data. The SQLite file
-#            and the uploaded PDFs live there and survive a redeploy.
-#            This is the Fly setup.
+#   Fly       A real volume is mounted there. The SQLite file and the uploaded
+#             PDFs persist across redeploys.
 #
-#   stateless
-#            DB_CONNECTION=pgsql + FILESYSTEM_DISK=s3. Nothing is kept on the
-#            container's own filesystem, which is rebuilt from the image every
-#            time. This is the free-host setup, where a persistent disk is not
-#            on offer.
+#   Render    /data is an ordinary directory inside a container that is
+#             rebuilt from the image whenever it wakes. Everything written to
+#             it is lost, and DEMO_SEED puts the library back on the way up.
 #
-# The mode is inferred rather than configured: if the database is Postgres
-# there is no SQLite file to prepare, and if the filesystem disk is s3 there
-# is no upload directory to link.
+# Nothing below distinguishes the two. The same steps run either way: create
+# the database file if it is not there, migrate, seed if asked. On Fly the
+# file is already present and migrate has nothing to do; elsewhere it is new
+# every time. A managed database is still supported — set DB_CONNECTION to
+# pgsql and give it a DB_URL — but no deployment here uses one.
+#
+# Every step that needs privilege is optional, so that a host running this as
+# an unprivileged user still boots: the chowns below are guarded for exactly
+# that reason, and the Dockerfile has already given uid 1000 ownership of
+# every directory written here.
 #
 set -e
 

@@ -1,35 +1,44 @@
 # Deploying ScholarDesk on Render (free tier)
 
-A free host that gives you a public URL **without a credit card**. The
-trade-off is that a free web service has no persistent disk, so the database
-moves off the container to a managed Postgres — which `render.yaml` creates
-for you, alongside the web service.
+A free host that gives you a public URL **without a credit card**, from a
+**private** repository — the running site is public, the source is not. That
+combination is the reason this is the recommended target and not one of the
+container hosts that only serve what they can also show.
+
+One web service, no database, nothing else to create.
 
 > **Prefer Fly?** `deploy.ps1` and `fly.toml` still work — one volume at
 > `/data` keeps the database *and* the uploads, so nothing is lost on a
 > restart. Fly now needs a card on file, though it does not bill an app this
 > size. Both deployments share the same Dockerfile and entrypoint.
 
-### What survives a restart, and what does not
+### Nothing survives a restart, and that is the design
 
 A free container's filesystem is rebuilt from the image every time it wakes,
-and it sleeps after about 15 minutes of inactivity.
+and it sleeps after about 15 minutes of inactivity. The database is a SQLite
+file on that filesystem, so it goes too — and `DEMO_SEED` rebuilds it on the
+way back up.
 
-| | Survives |
-|---|---|
-| Accounts, papers, notes, highlights, tags, collections, comments, activity | **Yes** — all in Postgres |
-| The PDF *bytes* of a paper uploaded on the live site | **No** — gone at the next restart |
+The practical effect is that **the site returns to the same worked library
+every time it starts**. Sign-ins, uploads and comments made on the live site
+last as long as the container does and no longer.
 
-The paper record stays; only the file behind it disappears, so the reader
-shows nothing for it afterwards. For a demo this is a non-issue — the
-container stays awake throughout — but do not treat the live site as storage.
+There was a managed Postgres here, which `render.yaml` declared and which made
+the blueprint fail to apply. Removing it turned out to be the better design
+rather than a retreat from it: a free web service has no persistent disk, so
+Postgres bought durability for the rows while the uploaded PDFs beside them
+still evaporated. Half-persistent is a worse thing to explain, and to demo,
+than deliberately ephemeral.
 
-Object storage would fix it and is deliberately not wired up: the app never
-consults the default disk. Every PDF path names `Storage::disk('public')`
-explicitly, and `PdfTextService` calls `->path()` on it, which only a local
-disk implements. Pointing `FILESYSTEM_DISK` at s3 therefore moved no uploads —
-it only skipped the `public/storage` symlink and made every PDF 404. Real
-object-storage support would mean changing those call sites, not an env var.
+Do not treat the live site as storage. It is a demonstration.
+
+Object storage would make uploads durable and is deliberately not wired up:
+the app never consults the default disk. Every PDF path names
+`Storage::disk('public')` explicitly, and `PdfTextService` calls `->path()` on
+it, which only a local disk implements. Pointing `FILESYSTEM_DISK` at s3
+therefore moved no uploads — it only skipped the `public/storage` symlink and
+made every PDF 404. Real object-storage support would mean changing those call
+sites, not an env var.
 
 ---
 
@@ -40,13 +49,15 @@ Two accounts, both free, neither asking for a card:
 1. **Render** — <https://render.com>, signed in with GitHub
 2. **Groq** — <https://console.groq.com/keys>, for the AI features
 
-And your code pushed to GitHub, which it already is.
+And your code pushed to GitHub. The repository may be private; grant Render
+access to that one repository when it asks.
 
-## 1. Create the Render services
+## 1. Create the Render service
 
 1. Render dashboard → **New → Blueprint**.
 2. Point it at your GitHub repository. Render reads `render.yaml` and proposes
-   a web service plus a Postgres database.
+   a single web service. If it proposes a database as well, you are on an old
+   commit — the current blueprint declares none.
 3. Apply. The first build takes several minutes: it compiles the front-end on
    Node 22, installs PHP dependencies, and builds the PHP extensions.
 
@@ -75,8 +86,8 @@ the mail.
 The mail rows are safe to leave empty: `MAIL_MAILER` is `failover`, which
 tries Gmail and then writes the message to the log rather than throwing.
 
-Save. Render redeploys, and the entrypoint runs the migrations against
-Postgres on boot.
+Save. Render redeploys, and the entrypoint creates the SQLite file, migrates
+it and seeds it on boot.
 
 ## 3. Sign in
 
@@ -95,9 +106,11 @@ sheet as their PDF — real enough that the reader renders it, text selection
 and highlighting work on it, and the indexer chunks and embeds it like any
 upload. They are not the published PDFs, which are not ours to redistribute.
 
-Seeding is idempotent: it runs on every container start, sees the demo
-researcher already there, and stops. Papers added during a demonstration are
-not overwritten by a restart.
+Seeding is idempotent — it checks for the demo researcher and stops if the
+data is already there — but on Render that guard rarely fires, because the
+SQLite file does not outlive the container. In practice each start gets a
+fresh database and seeds it from nothing, which is why the site always comes
+back in the same known state.
 
 > **Turn it off for anything that is not a demonstration.** Those passwords
 > are in this file, and one of the accounts is an administrator. Set
@@ -123,17 +136,14 @@ php artisan tinker --execute="App\Models\User::where('email','you@example.com')-
 sleep when idle, and the container has to start again. Open the link a minute
 before you demo it, not as you demo it.
 
-**Free Postgres instances expire.** Check the current term in the Render
-dashboard and take a dump before it lapses:
-
-```bash
-pg_dump "$DB_URL" > scholardesk-backup.sql
-```
+**Every restart resets the site to the seed.** Nothing typed into the live
+deployment is kept. There is no database to expire and no backup to take —
+if you want the state to persist, that is what the Fly deployment and its
+volume are for.
 
 **Your local library does not come with you.** What you get is the demo seed,
 not your own papers. `upload-data.ps1` seeds a *Fly* deployment and does not
-apply here — on Render you re-add papers through the interface, or import a
-dump into Postgres.
+apply here.
 
 **Semantic search will label some correct hits as a weak match.** Expected:
 the embedder is lexical, so a query sharing little vocabulary with a paper
@@ -151,10 +161,20 @@ demonstrating it live.
 `postgresql-dev`. If Alpine has moved that package, the Dockerfile's
 `.build-deps` list is where to look.
 
+**The blueprint will not apply.** It declared a free managed Postgres, and
+that is what used to fail. The current `render.yaml` has no `databases:`
+block at all — if Render is still offering to create one, it is reading an
+older commit, so check that the branch it points at has this change.
+
 **Boot stops at "DB_CONNECTION=pgsql but neither DB_URL nor DB_HOST is set".**
-The blueprint did not wire the database. Check the web service has a `DB_URL`
-sourced from `scholardesk-db`. Note it is `DB_URL`, not `DATABASE_URL` —
-`config/database.php` reads the former.
+Something set `DB_CONNECTION` to `pgsql` without a `DB_URL` beside it. The
+blueprint sets `sqlite`; look for a stale value left in the dashboard from an
+earlier deploy, which overrides the file.
+
+**Boot stops at "APP_KEY is not set".** `render.yaml` generates it, so this
+means the service was created by hand rather than from the blueprint. Add an
+`APP_KEY` environment variable with the output of `php artisan key:generate
+--show`.
 
 **Uploads succeed but the PDF will not open.** Two causes, in this order.
 Either `APP_URL` does not match the service's real URL — the `public` disk
@@ -163,10 +183,9 @@ exactly what it says — or `FILESYSTEM_DISK` is not `public`, in which case the
 entrypoint took its s3 branch and never linked `public/storage` at the upload
 directory. Check the boot log: it should read `==> uploads: local disk`.
 
-**A PDF that opened yesterday is blank today.** Expected, not a fault. The
-container was rebuilt from the image in between and the uploaded file went
-with it; the paper record in Postgres outlived its bytes. Re-upload the PDF on
-the paper's page.
+**Everything I added yesterday is gone.** Expected, not a fault: the container
+was rebuilt from the image in between and took the SQLite file and the uploads
+with it. The site is back at the seeded library.
 
 **Papers import as "Untitled Paper".** The metadata lookup could not reach
 Crossref. Check outbound HTTPS from the container; locally this is usually a

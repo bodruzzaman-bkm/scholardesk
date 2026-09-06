@@ -105,9 +105,25 @@ RUN { \
 
 WORKDIR /var/www/html
 
-COPY . .
-COPY --from=vendor /app/vendor ./vendor
-COPY --from=assets /app/public/build ./public/build
+# --chown=1000:1000 so the image does not depend on being run as root.
+# Render and Fly start it as root, which writes where it likes and does not
+# care who owns anything, but plenty of container hosts drop to an
+# unprivileged uid — and under one of those, without this, the entrypoint
+# cannot replace public/storage with a symlink and Laravel cannot write a
+# session or a log. Costing nothing on the hosts that do run as root, it keeps
+# the choice of host open.
+#
+# Set on the COPY rather than fixed afterwards with a recursive chown, which
+# would rewrite the metadata of every file and duplicate the whole tree into
+# another image layer.
+COPY --chown=1000:1000 . .
+COPY --from=vendor --chown=1000:1000 /app/vendor ./vendor
+COPY --from=assets --chown=1000:1000 /app/public/build ./public/build
+
+# The SQLite file and the uploads live here. Created at build time and left
+# world-writable for the same reason as above: an unprivileged user cannot
+# make a directory at the filesystem root, so it must already exist.
+RUN mkdir -p /data && chmod 777 /data
 
 # Builds the package manifest from the packages actually installed here. The
 # local one is excluded by .dockerignore because it lists dev dependencies that
@@ -115,13 +131,19 @@ COPY --from=assets /app/public/build ./public/build
 #
 # mkdir first: excluding bootstrap/cache/*.php can leave the directory absent
 # from the build context, and Laravel needs it to exist and be writable.
+#
+# The closing chown covers the three directories written at runtime, and is
+# needed because this RUN executes as root and leaves root-owned files behind
+# it — package:discover writes bootstrap/cache, and mkdir makes the storage
+# tree. public is in the list because the entrypoint creates public/storage
+# inside it.
 RUN mkdir -p bootstrap/cache storage/framework/cache/data \
                               storage/framework/sessions \
                               storage/framework/views \
                               storage/logs \
     && php artisan package:discover --ansi \
     && chmod +x docker/entrypoint.sh \
-    && chown -R www-data:www-data storage bootstrap/cache
+    && chown -R 1000:1000 storage bootstrap/cache public
 
 EXPOSE 8080
 
