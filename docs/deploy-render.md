@@ -1,52 +1,48 @@
 # Deploying ScholarDesk on Render (free tier)
 
-A free host that gives you a public URL without a credit card. The trade-off
-is that a free web service has **no persistent disk**, so the two things
-ScholarDesk normally keeps on one have to move off it:
+A free host that gives you a public URL **without a credit card**. The
+trade-off is that a free web service has no persistent disk, so the database
+moves off the container to a managed Postgres — which `render.yaml` creates
+for you, alongside the web service.
 
-| Normally | On Render |
+> **Prefer Fly?** `deploy.ps1` and `fly.toml` still work — one volume at
+> `/data` keeps the database *and* the uploads, so nothing is lost on a
+> restart. Fly now needs a card on file, though it does not bill an app this
+> size. Both deployments share the same Dockerfile and entrypoint.
+
+### What survives a restart, and what does not
+
+A free container's filesystem is rebuilt from the image every time it wakes,
+and it sleeps after about 15 minutes of inactivity.
+
+| | Survives |
 |---|---|
-| SQLite file on a volume | a managed **Postgres** database |
-| PDFs in `storage/app/public` on a volume | **Cloudflare R2** object storage |
+| Accounts, papers, notes, highlights, tags, collections, comments, activity | **Yes** — all in Postgres |
+| The PDF *bytes* of a paper uploaded on the live site | **No** — gone at the next restart |
 
-`render.yaml` declares the web service and the database. R2 is the one part
-Render cannot create for you.
+The paper record stays; only the file behind it disappears, so the reader
+shows nothing for it afterwards. For a demo this is a non-issue — the
+container stays awake throughout — but do not treat the live site as storage.
 
-> **Prefer Fly?** `deploy.ps1` and `fly.toml` still work and are simpler —
-> one volume, no object storage, no Postgres. Fly now needs a card on file,
-> though it does not bill an app this size. Both deployments share the same
-> Dockerfile and entrypoint.
+Object storage would fix it and is deliberately not wired up: the app never
+consults the default disk. Every PDF path names `Storage::disk('public')`
+explicitly, and `PdfTextService` calls `->path()` on it, which only a local
+disk implements. Pointing `FILESYSTEM_DISK` at s3 therefore moved no uploads —
+it only skipped the `public/storage` symlink and made every PDF 404. Real
+object-storage support would mean changing those call sites, not an env var.
 
 ---
 
 ## Before you start
 
-Three accounts, all free:
+Two accounts, both free, neither asking for a card:
 
-1. **Render** — <https://render.com>
-2. **Cloudflare** — for R2 object storage
-3. **Groq** — <https://console.groq.com/keys>, for the AI features
+1. **Render** — <https://render.com>, signed in with GitHub
+2. **Groq** — <https://console.groq.com/keys>, for the AI features
 
 And your code pushed to GitHub, which it already is.
 
----
-
-## 1. Create the R2 bucket
-
-R2 is S3-compatible, so Laravel's existing `s3` disk talks to it unchanged.
-
-1. Cloudflare dashboard → **R2** → **Create bucket**, name it `scholardesk`.
-2. **Settings → Public access** → enable a public URL (or attach a custom
-   domain). Copy that URL — it becomes `AWS_URL`, and it is what the PDF
-   reader fetches from.
-3. **Manage R2 API Tokens** → **Create API token**, with *Object Read & Write*
-   on that bucket. Copy the Access Key ID and Secret.
-4. Note your account ID from the R2 endpoint:
-   `https://<account-id>.r2.cloudflarestorage.com`
-
-Without these the app still boots — uploads just vanish on the next restart.
-
-## 2. Create the Render services
+## 1. Create the Render services
 
 1. Render dashboard → **New → Blueprint**.
 2. Point it at your GitHub repository. Render reads `render.yaml` and proposes
@@ -57,31 +53,32 @@ Without these the app still boots — uploads just vanish on the next restart.
 `APP_KEY` is generated automatically. Do not change it afterwards — every
 existing session and encrypted value is tied to it.
 
-## 3. Fill in the secrets
+## 2. Fill in the rest
 
-`render.yaml` marks ten values `sync: false`, meaning Render will not invent
-them. Set them under **Environment** on the web service:
+`render.yaml` marks a few values `sync: false`, meaning Render will not invent
+them. Set them under **Environment** on the web service. Only the first two
+matter for a demo:
 
-| Variable | Value |
-|---|---|
-| `APP_URL` | your service URL, e.g. `https://scholardesk.onrender.com` |
-| `AWS_ACCESS_KEY_ID` | R2 access key |
-| `AWS_SECRET_ACCESS_KEY` | R2 secret |
-| `AWS_BUCKET` | `scholardesk` |
-| `AWS_ENDPOINT` | `https://<account-id>.r2.cloudflarestorage.com` |
-| `AWS_URL` | the bucket's public URL |
-| `GROQ_API_KEY` | from console.groq.com |
-| `MAIL_USERNAME` | your Gmail address |
-| `MAIL_PASSWORD` | a Google **App Password**, not your account password |
-| `MAIL_FROM_ADDRESS` | the same Gmail address |
+| Variable | Value | |
+|---|---|---|
+| `APP_URL` | your service URL, e.g. `https://scholardesk.onrender.com` | required |
+| `GROQ_API_KEY` | from console.groq.com | for the AI panels |
+| `MAIL_USERNAME` | your Gmail address | optional |
+| `MAIL_PASSWORD` | a Google **App Password**, not your account password | optional |
+| `MAIL_FROM_ADDRESS` | the same Gmail address | optional |
 
-`APP_URL` matters more than it looks: Laravel builds password-reset and
-notification links from it, so a wrong value sends people to the wrong host.
+`APP_URL` matters more than it looks. Laravel builds password-reset and
+notification links from it, and the `public` disk builds every PDF URL from it
+too (`config/filesystems.php`), so a wrong value breaks the reader as well as
+the mail.
+
+The mail rows are safe to leave empty: `MAIL_MAILER` is `failover`, which
+tries Gmail and then writes the message to the log rather than throwing.
 
 Save. Render redeploys, and the entrypoint runs the migrations against
 Postgres on boot.
 
-## 4. Create an administrator
+## 3. Create an administrator
 
 Registration always produces a researcher — that is the privilege-escalation
 fix from Module 1, and there is no self-service route to an admin account.
@@ -123,9 +120,17 @@ The blueprint did not wire the database. Check the web service has a `DB_URL`
 sourced from `scholardesk-db`. Note it is `DB_URL`, not `DATABASE_URL` —
 `config/database.php` reads the former.
 
-**Uploads succeed but the PDF will not open.** `AWS_URL` is wrong or the
-bucket is not public. `Storage::url()` returns that value verbatim, so the
-reader requests exactly what it says.
+**Uploads succeed but the PDF will not open.** Two causes, in this order.
+Either `APP_URL` does not match the service's real URL — the `public` disk
+builds every file URL by appending `/storage` to it, so the reader requests
+exactly what it says — or `FILESYSTEM_DISK` is not `public`, in which case the
+entrypoint took its s3 branch and never linked `public/storage` at the upload
+directory. Check the boot log: it should read `==> uploads: local disk`.
+
+**A PDF that opened yesterday is blank today.** Expected, not a fault. The
+container was rebuilt from the image in between and the uploaded file went
+with it; the paper record in Postgres outlived its bytes. Re-upload the PDF on
+the paper's page.
 
 **Papers import as "Untitled Paper".** The metadata lookup could not reach
 Crossref. Check outbound HTTPS from the container; locally this is usually a

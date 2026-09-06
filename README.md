@@ -175,13 +175,16 @@ Two hosts are supported. Both share the same `Dockerfile` and
 
 See **[docs/deploy-render.md](docs/deploy-render.md)** for the full walkthrough.
 
-`render.yaml` declares the web service and a managed Postgres. Because a free
-web service has no persistent disk, the two things that normally live on one
-move off it: the database to Postgres, and the uploaded PDFs to Cloudflare R2
-(S3-compatible, so Laravel's existing `s3` disk needs no code change).
+`render.yaml` declares the web service and a managed Postgres, and needs no
+credit card. Because a free web service has no persistent disk, the database
+moves off the container to that Postgres.
 
-Worth knowing before a demo: a free service **sleeps when idle**, so the first
-request after a quiet spell takes 30–60 seconds.
+Uploaded PDFs stay on the container, so the bytes of a paper uploaded on the
+live site are lost at the next restart — the paper, its notes and its
+highlights are in Postgres and survive. Two things follow from that, both
+worth knowing before a demo: a free service **sleeps when idle**, so the first
+request after a quiet spell takes 30–60 seconds *and* clears the uploads.
+Open the link a few minutes early.
 
 ### Fly.io — simpler, needs a card on file
 

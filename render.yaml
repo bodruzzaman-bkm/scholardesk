@@ -1,14 +1,27 @@
 # ScholarDesk on Render — the free-tier deployment.
 #
-# Render's free web services have no persistent disk, so neither the SQLite
-# file nor the uploaded PDFs can live on the container. Both move off it:
+# No credit card is needed for any of this.
 #
-#   database  -> a managed Postgres, created below
-#   PDFs      -> S3-compatible object storage (Cloudflare R2), set by hand
+# Render's free web services have no persistent disk, so the database moves
+# off the container to a managed Postgres, created below.
+#
+# Uploaded PDFs stay on the container, deliberately. Object storage was tried
+# here and removed: the app does not read the default disk. Every PDF path
+# goes through Storage::disk('public') explicitly — PaperService writes it,
+# ExportService reads it, and PdfTextService calls ->path() on it, which only
+# a local disk implements. So FILESYSTEM_DISK never moved an upload anywhere;
+# setting it to s3 only sent the entrypoint down a branch that skips the
+# public/storage symlink, and every PDF 404'd in the reader. It is 'public'
+# below so that the symlink is made and uploads are actually served.
+#
+# The cost of that is honest and worth knowing: the container's filesystem is
+# rebuilt from the image on every restart, so a PDF uploaded during the demo
+# is gone once the service sleeps. Papers, notes, highlights, collections and
+# comments all live in Postgres and do survive — it is only the PDF bytes that
+# do not.
 #
 # Everything else — the Dockerfile, the entrypoint, the app — is shared with
-# the Fly deployment. The entrypoint reads DB_CONNECTION and FILESYSTEM_DISK
-# and skips the volume setup when they say Postgres and s3.
+# the Fly deployment, where a real volume at /data keeps the uploads too.
 #
 # Two things to know about the free tier before you demo:
 #   * a free service sleeps after inactivity, so the first request after a
@@ -68,25 +81,14 @@ services:
       - key: QUEUE_CONNECTION
         value: sync
 
-      # --- Uploaded PDFs -> object storage --------------------------------
-      # Set these by hand in the Render dashboard from your R2 bucket.
-      # Without them the app still boots, but uploads vanish on every restart.
+      # --- Uploaded PDFs ---------------------------------------------------
+      # 'public', not 's3'. See the note at the top of this file: the app
+      # addresses Storage::disk('public') directly, so this value does not
+      # choose where a PDF goes — it chooses whether the entrypoint links
+      # public/storage at the upload directory. Without that link the files
+      # are written but never served.
       - key: FILESYSTEM_DISK
-        value: s3
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_BUCKET
-        sync: false
-      - key: AWS_DEFAULT_REGION
-        value: auto             # R2 uses "auto"
-      - key: AWS_ENDPOINT
-        sync: false             # https://<account-id>.r2.cloudflarestorage.com
-      - key: AWS_URL
-        sync: false             # the bucket's public URL, for Storage::url()
-      - key: AWS_USE_PATH_STYLE_ENDPOINT
-        value: "true"           # required by R2
+        value: public
 
       # --- AI --------------------------------------------------------------
       # Semantic search and related papers work without this; summaries,
