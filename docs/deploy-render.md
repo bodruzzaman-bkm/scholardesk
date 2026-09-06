@@ -58,11 +58,8 @@ access to that one repository when it asks.
 2. Point it at your GitHub repository. Render reads `render.yaml` and proposes
    a single web service. If it proposes a database as well, you are on an old
    commit — the current blueprint declares none.
-3. Apply. The first build takes several minutes: it compiles the front-end on
-   Node 22, installs PHP dependencies, and builds the PHP extensions.
-
-`APP_KEY` is generated automatically. Do not change it afterwards — every
-existing session and encrypted value is tied to it.
+3. Apply. The build takes a couple of minutes: it compiles the front-end on
+   Node 22, installs PHP dependencies, and builds two PHP extensions.
 
 ## 2. Fill in the rest
 
@@ -72,7 +69,8 @@ matter for a demo:
 
 | Variable | Value | |
 |---|---|---|
-| `APP_URL` | your service URL, e.g. `https://scholardesk.onrender.com` | required |
+| `APP_KEY` | output of `php artisan key:generate --show` | **required** |
+| `APP_URL` | your service URL, e.g. `https://scholardesk-nfs9.onrender.com` | required |
 | `GROQ_API_KEY` | from console.groq.com | for the AI panels |
 | `MAIL_USERNAME` | your Gmail address | optional |
 | `MAIL_PASSWORD` | a Google **App Password**, not your account password | optional |
@@ -171,10 +169,18 @@ Something set `DB_CONNECTION` to `pgsql` without a `DB_URL` beside it. The
 blueprint sets `sqlite`; look for a stale value left in the dashboard from an
 earlier deploy, which overrides the file.
 
-**Boot stops at "APP_KEY is not set".** `render.yaml` generates it, so this
-means the service was created by hand rather than from the blueprint. Add an
-`APP_KEY` environment variable with the output of `php artisan key:generate
---show`.
+**Boot stops at "APP_KEY is not set".** Set it — the blueprint marks it
+`sync: false` on purpose and cannot invent one. Use the full output of
+`php artisan key:generate --show`, including the `base64:` prefix.
+
+**Every page 500s but `/up` returns 200, and the log says "Unsupported cipher
+or incorrect key length".** `APP_KEY` is present but is not a Laravel key.
+The Encrypter measures it against AES-256-CBC, which wants exactly 32 bytes,
+so any other random string fails — this is what Render's `generateValue: true`
+produced before the blueprint stopped using it. The failure happens inside the
+cookie middleware, which is why `/up` is unaffected and the service reports
+itself healthy while serving nothing. Replace the value with the output of
+`php artisan key:generate --show`.
 
 **Uploads succeed but the PDF will not open.** Two causes, in this order.
 Either `APP_URL` does not match the service's real URL — the `public` disk

@@ -66,10 +66,18 @@ services:
       - key: LOG_CHANNEL
         value: stderr           # Render collects stdout/stderr
 
-      # Generated once by Render and then kept. Losing it makes every existing
-      # session and every encrypted column unreadable.
+      # Set by hand, and it must be a Laravel key: "base64:" followed by 32
+      # base64-encoded bytes, from `php artisan key:generate --show`.
+      #
+      # This was generateValue: true, which does not work. Render's generated
+      # value is a random string of its own choosing, and Laravel's Encrypter
+      # measures the key against the cipher — AES-256-CBC wants exactly 32
+      # bytes — so it threw "Unsupported cipher or incorrect key length" while
+      # constructing the encrypter. That happens inside the cookie middleware,
+      # so every page 500'd while /up, which needs neither cookies nor a
+      # session, answered 200 and made the service look healthy.
       - key: APP_KEY
-        generateValue: true
+        sync: false
 
       # Set this to the service's own URL after the first deploy. Laravel uses
       # it to build absolute links in notification emails and password resets.
