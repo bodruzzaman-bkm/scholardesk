@@ -243,4 +243,71 @@ class ImportByUrlTest extends TestCase
 
         $this->assertSame('My own title', Paper::firstOrFail()->title);
     }
+
+    /**
+     * Reading a page's citation tags means the server fetches a URL the user
+     * chose, which is an SSRF primitive: without a guard, pasting an internal
+     * address as an "article link" makes the server request it and hands the
+     * page's <title> back as the paper title. downloadPdf() was already fenced
+     * against this; htmlMeta() was not.
+     */
+    public function test_citation_metadata_is_never_fetched_from_a_private_host(): void
+    {
+        Http::fake();
+
+        $service = app(\App\Services\MetadataService::class);
+
+        foreach ([
+            'http://127.0.0.1/admin',
+            'https://127.0.0.1/admin',
+            'http://localhost:6379/',
+            'http://10.0.0.5/internal',
+            'http://192.168.1.1/router',
+            'http://169.254.169.254/latest/meta-data/',
+            'http://[::1]/admin',
+        ] as $url) {
+            $this->assertNull($service->htmlMeta($url), "should have refused: {$url}");
+        }
+
+        // Refused before the request was built, not after it came back.
+        Http::assertNothingSent();
+    }
+
+    public function test_citation_metadata_is_never_fetched_over_a_non_http_scheme(): void
+    {
+        Http::fake();
+
+        $service = app(\App\Services\MetadataService::class);
+
+        foreach (['file:///etc/passwd', 'gopher://example.com/', 'dict://example.com:11211/'] as $url) {
+            $this->assertNull($service->htmlMeta($url), "should have refused: {$url}");
+        }
+
+        Http::assertNothingSent();
+    }
+
+    /**
+     * The whole import path, not just the service: a pasted internal address
+     * must not reach the network even though it passes `url` validation.
+     */
+    public function test_pasting_an_internal_address_imports_nothing_and_sends_no_request(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/papers', ['identifier' => 'http://169.254.169.254/latest/meta-data/'])
+            ->assertRedirect();
+
+        Http::assertNothingSent();
+
+        // The paper is still created — an unresolvable link is not an error —
+        // but it carries no scraped metadata from the internal host.
+        $paper = Paper::first();
+
+        if ($paper !== null) {
+            $this->assertNotSame('meta-data', $paper->title);
+        }
+    }
 }

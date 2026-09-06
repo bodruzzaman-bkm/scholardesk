@@ -6,6 +6,8 @@ use App\Support\Doi;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
+use Throwable;
 
 /**
  * Resolves paper metadata from a DOI or an article URL.
@@ -248,15 +250,52 @@ class MetadataService
      */
     public function htmlMeta(string $url): ?array
     {
+        /*
+         | This fetches a URL the user pasted, which makes it the same SSRF
+         | primitive downloadPdf() is fenced against — and until now it was the
+         | unfenced twin. Without the guard below, pasting
+         | http://169.254.169.254/... or http://127.0.0.1:6379/ as an "article
+         | link" made the server issue that request, and any internal page that
+         | answered had its <title> handed back as the paper's title.
+         */
+        if (! $this->hostIsPublic($url)) {
+            Log::warning('Refused to fetch citation metadata from a non-public host', ['url' => $url]);
+
+            return null;
+        }
+
         try {
             $response = Http::timeout(self::TIMEOUT)
                 ->withHeaders([
                     'User-Agent' => $this->userAgent(),
                     'Accept' => 'text/html,application/xhtml+xml',
                 ])
+                /*
+                 | Redirects are followed, because publisher links routinely
+                 | bounce through a canonical URL — but a public host is free to
+                 | redirect to a private one, so every hop is re-checked rather
+                 | than trusting the first URL alone.
+                 */
+                ->withOptions(['allow_redirects' => [
+                    'max' => 3,
+                    'strict' => true,
+                    'referer' => false,
+                    'protocols' => ['http', 'https'],
+                    'on_redirect' => function ($request, $response, $uri): void {
+                        if (! $this->hostIsPublic((string) $uri)) {
+                            throw new RuntimeException("Refused to follow a redirect to {$uri}");
+                        }
+                    },
+                ]])
                 ->get($url);
         } catch (ConnectionException $e) {
             Log::warning('Page fetch for citation metadata failed', ['url' => $url, 'error' => $e->getMessage()]);
+
+            return null;
+        } catch (Throwable $e) {
+            // Covers the redirect guard above, which throws rather than
+            // returning, since Guzzle gives on_redirect no way to say "stop".
+            Log::warning('Page fetch for citation metadata refused', ['url' => $url, 'error' => $e->getMessage()]);
 
             return null;
         }
@@ -353,27 +392,75 @@ class MetadataService
         return $body;
     }
 
-    /** Blocks loopback and RFC1918 targets so an import cannot probe the LAN. */
+    /**
+     * Blocks loopback, RFC1918 and link-local targets so an import cannot
+     * probe the LAN or a cloud metadata endpoint.
+     *
+     * Two details matter beyond the obvious address check:
+     *
+     *   - the scheme is pinned to http/https, because file://, gopher:// and
+     *     dict:// are each an SSRF primitive and none of them is something a
+     *     citation lookup ever needs;
+     *   - *every* address the host resolves to is checked, not just the first.
+     *     A name answering with one public and one private A record would
+     *     otherwise walk straight through the guard.
+     *
+     * Resolution failure is treated as unsafe rather than safe: a name we
+     * cannot resolve is a name we cannot vouch for.
+     */
     private function hostIsPublic(string $url): bool
     {
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            return false;
+        }
+
         $host = parse_url($url, PHP_URL_HOST);
 
         if (! is_string($host) || $host === '') {
             return false;
         }
 
-        $ip = filter_var($host, FILTER_VALIDATE_IP) ? $host : gethostbyname($host);
+        $addresses = $this->resolveAll($host);
 
-        // gethostbyname returns the input unchanged when resolution fails.
-        if (! filter_var($ip, FILTER_VALIDATE_IP)) {
+        if ($addresses === []) {
             return false;
         }
 
-        return filter_var(
-            $ip,
-            FILTER_VALIDATE_IP,
-            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-        ) !== false;
+        foreach ($addresses as $ip) {
+            $isPublic = filter_var(
+                $ip,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+            );
+
+            if ($isPublic === false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Every IP a host resolves to, or the literal itself when the host is
+     * already an address.
+     *
+     * @return list<string>
+     */
+    private function resolveAll(string $host): array
+    {
+        // An IPv6 literal arrives bracketed inside a URL: http://[::1]/path
+        $literal = trim($host, '[]');
+
+        if (filter_var($literal, FILTER_VALIDATE_IP) !== false) {
+            return [$literal];
+        }
+
+        $addresses = gethostbynamel($host);
+
+        return $addresses === false ? [] : array_values($addresses);
     }
 
     // -----------------------------------------------------------------
