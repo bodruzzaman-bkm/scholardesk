@@ -127,4 +127,58 @@ class CitationServiceTest extends TestCase
             $this->service->format($this->paper(), 'nonsense')
         );
     }
+
+    /**
+     * A percent sign opens a comment in BibTeX, so an unescaped one swallowed
+     * the rest of its line — the closing brace included — and left an entry no
+     * parser could read. Percentages are ordinary in paper titles.
+     */
+    public function test_a_percent_sign_in_a_title_is_escaped_and_does_not_comment_out_the_entry(): void
+    {
+        $bibtex = $this->service->bibtex($this->paper([
+            'title' => 'Improving accuracy by 50% using AI',
+        ]));
+
+        $this->assertStringContainsString('50\%', $bibtex);
+        $this->assertStringNotContainsString('50% using', $bibtex);
+
+        // The field survives intact: brace, content, closing brace, comma.
+        $this->assertStringContainsString('title    = {Improving accuracy by 50\% using AI},', $bibtex);
+        // And the entry still terminates.
+        $this->assertStringEndsWith('}', trim($bibtex));
+    }
+
+    public function test_every_latex_special_character_is_escaped(): void
+    {
+        $bibtex = $this->service->bibtex($this->paper([
+            'title' => 'Cost & benefit: $alpha, x_i, y^2, ~approx, #tag',
+        ]));
+
+        foreach (['\&', '\$', '\_', '\textasciicircum{}', '\textasciitilde{}', '\#'] as $escaped) {
+            $this->assertStringContainsString($escaped, $bibtex, "missing escape: {$escaped}");
+        }
+    }
+
+    /**
+     * The backslash must be escaped in the same pass as the rest, or the
+     * backslash *introduced* by escaping "%" gets escaped a second time.
+     */
+    public function test_a_backslash_is_escaped_exactly_once(): void
+    {
+        $bibtex = $this->service->bibtex($this->paper([
+            'title' => 'A path C:\Users and 10% more',
+        ]));
+
+        $this->assertStringContainsString('\textbackslash{}', $bibtex);
+        // The percent escape must not have been re-escaped into \textbackslash{}%.
+        $this->assertStringContainsString('10\% more', $bibtex);
+        $this->assertStringNotContainsString('\textbackslash{}%', $bibtex);
+    }
+
+    public function test_braces_are_still_escaped(): void
+    {
+        $bibtex = $this->service->bibtex($this->paper(['title' => 'A {braced} title']));
+
+        $this->assertStringContainsString('\{braced\}', $bibtex);
+    }
 }

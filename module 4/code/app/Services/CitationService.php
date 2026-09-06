@@ -193,9 +193,35 @@ class CitationService
         return (string) (end($bits) ?: $name);
     }
 
-    /** Escape the characters that would otherwise break a BibTeX entry. */
+    /**
+     * Escape the characters that would otherwise break a BibTeX entry.
+     *
+     * Braces alone were escaped here before, which left the rest of LaTeX's
+     * special set intact — and one of them is quietly destructive. `%` opens a
+     * comment, so a title like "Improving accuracy by 50% using AI" commented
+     * out the remainder of its own line, closing brace included, and produced
+     * an entry no BibTeX parser could read. `&`, `$`, `#`, `_`, `^` and `~`
+     * each raise a LaTeX error instead of corrupting the structure, and a lone
+     * `\` becomes an undefined control sequence.
+     *
+     * strtr() rather than str_replace() because it makes a single left-to-right
+     * pass: the backslashes introduced by one replacement are never re-escaped
+     * by a later one. str_replace() would turn `%` into `\%` and then, on the
+     * backslash pass, into `\textbackslash{}%`.
+     */
     private function escapeBibtex(string $value): string
     {
-        return str_replace(['{', '}'], ['\{', '\}'], $value);
+        return strtr($value, [
+            '\\' => '\textbackslash{}',
+            '{' => '\{',
+            '}' => '\}',
+            '$' => '\$',
+            '&' => '\&',
+            '%' => '\%',
+            '#' => '\#',
+            '_' => '\_',
+            '^' => '\textasciicircum{}',
+            '~' => '\textasciitilde{}',
+        ]);
     }
 }
