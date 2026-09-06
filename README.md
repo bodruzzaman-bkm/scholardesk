@@ -159,7 +159,7 @@ including DOI lookups.
 php artisan test
 ```
 
-**375 tests, 1,099 assertions.** No network access is needed — outbound HTTP
+**393 tests, 1,154 assertions.** No network access is needed — outbound HTTP
 is faked, and `Http::preventStrayRequests()` fails the suite if any test tries
 to reach a real host.
 
@@ -212,10 +212,21 @@ app/
   Policies/       ownership and collection-membership authorisation
   Services/       PaperService, RagService, EmbeddingService, …
   Support/        small value helpers (DOI parsing, markdown sanitising)
-docs/             setup and feature guides
+docs/             setup guide, feature guides, and viva-notes.md
 resources/views/  Blade templates and components
 module 1..4/      course submission packages (see below)
 ```
+
+### Understanding the codebase
+
+**[docs/viva-notes.md](docs/viva-notes.md)** explains how the system actually
+works, rather than what it satisfies: the layered architecture and why each
+seam is where it is, the schema and its relationship types, how one upload
+touches all four modules, and the RAG pipeline from PDF bytes to a cited
+answer — with the real constants and a worked embedding example.
+
+Start there if you want the mechanism. The `module N/features.md` documents
+below are the per-requirement reference.
 
 ### Course submission packages
 
