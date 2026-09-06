@@ -111,7 +111,11 @@ class ExportService
 
         return [
             'content' => implode("\n", $lines),
-            'filename' => str($collection->name)->slug()->value().'.md',
+            // A name with no alphanumerics at all ("###") slugs to an empty
+            // string, which produced a bare ".md" — a hidden file on unix and a
+            // download browsers refuse to name. collectionArchive() already had
+            // this fallback; the two now agree.
+            'filename' => (str($collection->name)->slug()->value() ?: 'collection').'.md',
         ];
     }
 
