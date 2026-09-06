@@ -85,6 +85,23 @@ fi
 echo "==> running migrations"
 php artisan migrate --force --no-interaction
 
+# --- Demo data -------------------------------------------------------------
+# A deployment made to be shown to somebody starts as an empty login page,
+# which demonstrates none of it. DEMO_SEED fills it with a worked library:
+# papers with real PDFs and real indexes, shared collections, comments and a
+# moderation queue.
+#
+# Off by default, because it also creates accounts whose password is public
+# knowledge, and it runs on every start rather than only the first — so the
+# seeder is written to be idempotent and returns immediately once its data is
+# there. Best-effort for the same reason the caches below are: a demo library
+# failing to seed is not a reason to serve nothing.
+if [ "${DEMO_SEED:-false}" = "true" ]; then
+    echo "==> seeding demo data"
+    php artisan db:seed --class="Database\\Seeders\\DemoSeeder" --force --no-interaction \
+        || echo "    (demo seed skipped)"
+fi
+
 # Cached config/routes/views make each request measurably cheaper. Done at boot
 # rather than build time because the cache bakes in environment values, which
 # are only present now.

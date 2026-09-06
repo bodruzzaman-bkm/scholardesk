@@ -90,6 +90,14 @@ services:
       - key: FILESYSTEM_DISK
         value: public
 
+      # --- Demo data --------------------------------------------------------
+      # Fills the deployment with a worked library on first boot, so whoever
+      # opens the URL sees the application rather than an empty account. The
+      # sign-in details are in docs/deploy-render.md and are not secret —
+      # set this to false for anything but a demonstration.
+      - key: DEMO_SEED
+        value: "true"
+
       # --- AI --------------------------------------------------------------
       # Semantic search and related papers work without this; summaries,
       # Q&A and review drafts report "not configured" until it is set.

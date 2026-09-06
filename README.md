@@ -186,6 +186,14 @@ worth knowing before a demo: a free service **sleeps when idle**, so the first
 request after a quiet spell takes 30–60 seconds *and* clears the uploads.
 Open the link a few minutes early.
 
+`DEMO_SEED=true` fills a fresh deployment with a worked library — twelve
+indexed papers, tags, shared collections, threaded comments and a moderation
+queue — so the URL opens on the application rather than an empty account.
+`database/seeders/DemoSeeder.php` builds it, generating a real PDF per paper
+so the reader and the indexer have a genuine file to work on. The sign-in
+details are in the deployment guide; turn the flag off outside a
+demonstration.
+
 ### Fly.io — simpler, needs a card on file
 
 ```powershell

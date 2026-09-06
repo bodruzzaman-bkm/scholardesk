@@ -78,11 +78,38 @@ tries Gmail and then writes the message to the log rather than throwing.
 Save. Render redeploys, and the entrypoint runs the migrations against
 Postgres on boot.
 
-## 3. Create an administrator
+## 3. Sign in
 
-Registration always produces a researcher — that is the privilege-escalation
-fix from Module 1, and there is no self-service route to an admin account.
-Promote yourself from Render's **Shell** tab:
+`render.yaml` sets `DEMO_SEED=true`, so the first boot fills the deployment
+with a worked library rather than leaving an empty login page. Three accounts
+are created, all with the password **`demo1234`**:
+
+| Account | Sign in as | Shows |
+|---|---|---|
+| Researcher | `researcher@scholardesk.demo` | The library — 12 indexed papers, tags, collections, reader and AI panels. **Start here.** |
+| Administrator | `admin@scholardesk.demo` | The admin portal: user roles, comment moderation, the report queue |
+| Collaborator | `collaborator@scholardesk.demo` | The same shared collection seen as an editor rather than an owner |
+
+The seeded papers carry real bibliographic metadata and a generated summary
+sheet as their PDF — real enough that the reader renders it, text selection
+and highlighting work on it, and the indexer chunks and embeds it like any
+upload. They are not the published PDFs, which are not ours to redistribute.
+
+Seeding is idempotent: it runs on every container start, sees the demo
+researcher already there, and stops. Papers added during a demonstration are
+not overwritten by a restart.
+
+> **Turn it off for anything that is not a demonstration.** Those passwords
+> are in this file, and one of the accounts is an administrator. Set
+> `DEMO_SEED` to `false` in the Render dashboard and the accounts are simply
+> never created.
+
+### Without the seed
+
+With `DEMO_SEED=false` the deployment starts empty, and registration always
+produces a researcher — that is the privilege-escalation fix from Module 1,
+and there is no self-service route to an admin account. Promote yourself from
+Render's **Shell** tab:
 
 ```bash
 php artisan tinker --execute="App\Models\User::where('email','you@example.com')->update(['role'=>'administrator']);"
@@ -103,9 +130,18 @@ dashboard and take a dump before it lapses:
 pg_dump "$DB_URL" > scholardesk-backup.sql
 ```
 
-**Your local library does not come with you.** The deployment starts empty.
-`upload-data.ps1` seeds a *Fly* deployment and does not apply here — on Render
-you re-add papers through the interface, or import a dump into Postgres.
+**Your local library does not come with you.** What you get is the demo seed,
+not your own papers. `upload-data.ps1` seeds a *Fly* deployment and does not
+apply here — on Render you re-add papers through the interface, or import a
+dump into Postgres.
+
+**Semantic search will label some correct hits as a weak match.** Expected:
+the embedder is lexical, so a query sharing little vocabulary with a paper
+scores below the 0.32 threshold even when the paper it ranks first is the
+right one. `README.md` sets this out under *Known limitations*. Questions that
+reuse the wording of the field — "self-attention", "residual connections",
+"retrieval-augmented" — score visibly higher, which is worth knowing before
+demonstrating it live.
 
 ---
 

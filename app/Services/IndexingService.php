@@ -40,7 +40,19 @@ class IndexingService
             return $result['status'];
         }
 
-        $text = $result['text'];
+        return $this->storeText($paper, $result['text']);
+    }
+
+    /**
+     * Chunk, embed and store text that is already in hand.
+     *
+     * Split out of index() because retrieval does not actually care where the
+     * text came from — only that it exists. index() gets it from a PDF; the
+     * demo seeder has it already and has no file to parse. Both need the same
+     * chunk-embed-store transaction, and it should exist once.
+     */
+    public function storeText(Paper $paper, string $text): string
+    {
         $chunks = $this->chunker->chunk($text);
 
         if ($chunks === []) {
