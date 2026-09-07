@@ -128,7 +128,7 @@ php artisan tinker --execute="App\Models\User::where('email','you@example.com')-
 
 ## Mail
 
-**A free instance cannot send email, and trying takes the site down.**
+**SMTP cannot work on a free instance, and trying takes the site down.**
 
 Render blocks outbound traffic to ports 25, 465 and 587 on free web services.
 That is every port an SMTP server listens on, so no provider avoids it — the
@@ -138,27 +138,41 @@ serves with `php artisan serve`, a single-process server, so one request stuck
 on a mail socket stops the site answering anything at all until the platform
 restarts the container. A notification email becomes an outage.
 
-Two defences are in place. `MAIL_MAILER` is `log` here, so nothing opens a
-socket; and `config/mail.php` sets an SMTP `timeout` of 10 seconds instead of
-Laravel's `null`, which would inherit PHP's 60-second `default_socket_timeout`.
-Should the mailer ever be switched on by mistake, it now fails as a caught
-error rather than as downtime.
+So this deployment does not use SMTP. `MAIL_MAILER` is **`resend`**, which
+hands the message to Resend's HTTPS API on port 443 — not blocked, and nothing
+to hang on. As a second line of defence `config/mail.php` sets an SMTP
+`timeout` of 10 seconds rather than Laravel's `null`, which inherits PHP's
+60-second `default_socket_timeout`: if SMTP is ever switched back on here by
+mistake, it now fails as a caught error instead of as downtime.
 
-As `log`, mail is written to the container log, and **Settings → Notifications
-& email** reports the mailer as unconfigured — which is the truth.
+### The one thing to set
 
-### Making mail actually work
+`RESEND_API_KEY`, in the Render dashboard. Sign up at
+[resend.com](https://resend.com), create an API key, paste it in, save.
 
-In order of cost:
+Until it is set, **Settings → Notifications & email** reports the mailer as
+unconfigured and says so plainly, rather than showing green over a transport
+that cannot send.
 
-1. **Upgrade to any paid instance.** The port block is free-tier only. Set
-   `MAIL_MAILER=failover` and the Ethereal credentials already in `render.yaml`
-   start working immediately.
-2. **Use an HTTPS API instead of SMTP.** Resend, Postmark and Mailgun each
-   publish one, and port 443 is not blocked. `config/mail.php` already declares
-   those transports; each needs its Composer package and an API key.
-3. **Demonstrate it locally**, where nothing is blocked and the committed
-   Ethereal credentials work as they stand. See below.
+Two limits apply to a Resend account with no verified domain:
+
+- the sender must be `onboarding@resend.dev`, which is what `MAIL_FROM_ADDRESS`
+  is set to;
+- it will only deliver to the address the account was opened with. The seeded
+  `@scholardesk.demo` users therefore cannot receive anything — register an
+  account on the site using your own address to watch mail arrive.
+
+Verifying a domain in the Resend dashboard lifts both.
+
+### Other routes
+
+- **Upgrade to any paid instance.** The port block is free-tier only. Set
+  `MAIL_MAILER=failover` and the Ethereal credentials already in `render.yaml`
+  work immediately, with no signup at all.
+- **Postmark or Mailgun** instead of Resend — both publish an HTTPS API, and
+  `config/mail.php` already declares the Postmark transport.
+- **Demonstrate it locally**, where nothing is blocked and the committed
+  Ethereal credentials work as they stand. See below.
 
 ### Ethereal
 

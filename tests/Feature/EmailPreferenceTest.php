@@ -156,4 +156,44 @@ class EmailPreferenceTest extends TestCase
         $this->patch(route('settings.email'))->assertRedirect(route('login'));
         $this->post(route('settings.email.test'))->assertRedirect(route('login'));
     }
+
+    /**
+     * A transport with no credential must never report itself configured.
+     *
+     * The whole point of the status panel is that it cannot be green over a
+     * mailer that will not send, so an API transport missing its key has to
+     * read exactly like a blank SMTP password.
+     */
+    public function test_a_transport_is_only_configured_when_its_credential_is_present(): void
+    {
+        $mail = app(\App\Services\MailService::class);
+
+        // Transports that never deliver, whatever else is set.
+        foreach (['log', 'array'] as $driver) {
+            config(['mail.default' => $driver]);
+            $this->assertFalse($mail->isConfigured(), "{$driver} must not report configured");
+        }
+
+        // API transports: keyed on their own secret, not assumed good.
+        config(['mail.default' => 'resend', 'services.resend.key' => null]);
+        $this->assertFalse($mail->isConfigured(), 'resend without a key must not report configured');
+
+        config(['services.resend.key' => 're_test_key']);
+        $this->assertTrue($mail->isConfigured(), 'resend with a key must report configured');
+        $this->assertSame('the Resend API', $mail->transport());
+
+        config(['mail.default' => 'postmark', 'services.postmark.key' => null]);
+        $this->assertFalse($mail->isConfigured(), 'postmark without a key must not report configured');
+
+        // SMTP: both halves of the credential are required.
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp.username' => 'someone@example.com',
+            'mail.mailers.smtp.password' => null,
+        ]);
+        $this->assertFalse($mail->isConfigured(), 'a blank SMTP password must not report configured');
+
+        config(['mail.mailers.smtp.password' => 'secret']);
+        $this->assertTrue($mail->isConfigured());
+    }
 }

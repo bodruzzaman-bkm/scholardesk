@@ -27,16 +27,26 @@ class MailService
             return false;
         }
 
-        // smtp, and the failover chain that begins with smtp, both stand or fall
-        // on the SMTP credentials. Missing ones are this project's usual failure
-        // and are indistinguishable from success unless checked here.
-        if (in_array($default, ['smtp', 'failover'], true)) {
-            return filled(config('mail.mailers.smtp.username'))
-                && filled(config('mail.mailers.smtp.password'));
-        }
+        // Every remaining transport is "configured" exactly when the credential
+        // it actually authenticates with is present. Answering true for a
+        // transport whose key is missing would paint the panel green over a
+        // mailer that cannot send — the precise dishonesty this class exists to
+        // remove — so each one is asked about its own secret rather than taken
+        // at its word.
+        return match ($default) {
+            // smtp, and the failover chain that begins with smtp.
+            'smtp', 'failover' => filled(config('mail.mailers.smtp.username'))
+                && filled(config('mail.mailers.smtp.password')),
 
-        // ses / postmark / resend / sendmail carry their credentials elsewhere.
-        return true;
+            'resend' => filled(config('services.resend.key')),
+            'postmark' => filled(config('services.postmark.key')),
+            'ses' => filled(config('services.ses.key')) && filled(config('services.ses.secret')),
+
+            // sendmail shells out to a local binary and has nothing to check.
+            'sendmail' => true,
+
+            default => true,
+        };
     }
 
     /** A short human label for where mail goes, shown on the settings page. */
@@ -50,6 +60,10 @@ class MailService
             'array' => 'an in-memory array (tests)',
             'smtp' => $host,
             'failover' => $host.', falling back to the application log',
+            'resend' => 'the Resend API',
+            'postmark' => 'the Postmark API',
+            'ses' => 'Amazon SES',
+            'sendmail' => 'the local sendmail binary',
             default => $default,
         };
     }
