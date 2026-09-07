@@ -137,19 +137,36 @@ services:
         value: openai/gpt-oss-120b
 
       # --- Mail ------------------------------------------------------------
-      # failover = smtp then log, so a missing app password degrades to the
-      # log rather than 500-ing password reset.
+      # failover = smtp then log, so a broken mailer degrades to the log
+      # rather than 500-ing password reset.
+      #
+      # Ethereal rather than Gmail. Gmail SMTP refuses an account password and
+      # wants an App Password, which only exists once 2-Step Verification is on
+      # a personal Google account — a credential nobody can mint for a shared
+      # demo. Ethereal is a throwaway capture mailbox: it accepts mail over
+      # real SMTP with real authentication and publishes it at
+      # https://ethereal.email instead of delivering onward. It also accepts
+      # any recipient, which is what makes the seeded @scholardesk.demo
+      # accounts usable — Gmail could never have delivered to a fake TLD, so
+      # the demo accounts and real delivery were always mutually exclusive.
+      #
+      # The credentials below are in the repo deliberately. They belong to a
+      # disposable mailbox tied to no account, holding nothing, protecting
+      # nothing; the blast radius of leaking them is that a stranger reads
+      # ScholarDesk's own test mail. Before this ever carries real mail, move
+      # MAIL_USERNAME / MAIL_PASSWORD / MAIL_FROM_ADDRESS back to `sync: false`
+      # and set them in the dashboard.
       - key: MAIL_MAILER
         value: failover
       - key: MAIL_SCHEME
         value: smtp
       - key: MAIL_HOST
-        value: smtp.gmail.com
+        value: smtp.ethereal.email
       - key: MAIL_PORT
         value: "587"
       - key: MAIL_USERNAME
-        sync: false
+        value: rxv6h3v4oupq45el@ethereal.email
       - key: MAIL_PASSWORD
-        sync: false             # a Google App Password, not the account one
+        value: 4G7uYRmSTrygdaS8kw
       - key: MAIL_FROM_ADDRESS
-        sync: false
+        value: rxv6h3v4oupq45el@ethereal.email

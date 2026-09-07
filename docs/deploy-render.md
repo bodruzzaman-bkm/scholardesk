@@ -72,17 +72,15 @@ matter for a demo:
 | `APP_KEY` | output of `php artisan key:generate --show` | **required** |
 | `APP_URL` | your service URL, e.g. `https://scholardesk-nfs9.onrender.com` | required |
 | `GROQ_API_KEY` | from console.groq.com | for the AI panels |
-| `MAIL_USERNAME` | your Gmail address | optional |
-| `MAIL_PASSWORD` | a Google **App Password**, not your account password | optional |
-| `MAIL_FROM_ADDRESS` | the same Gmail address | optional |
 
 `APP_URL` matters more than it looks. Laravel builds password-reset and
 notification links from it, and the `public` disk builds every PDF URL from it
 too (`config/filesystems.php`), so a wrong value breaks the reader as well as
 the mail.
 
-The mail rows are safe to leave empty: `MAIL_MAILER` is `failover`, which
-tries Gmail and then writes the message to the log rather than throwing.
+Mail needs nothing set by hand. `render.yaml` ships working Ethereal SMTP
+credentials, so the deployment sends real mail out of the box — see
+[Mail](#mail) below.
 
 Save. Render redeploys, and the entrypoint creates the SQLite file, migrates
 it and seeds it on boot.
@@ -125,6 +123,37 @@ Render's **Shell** tab:
 ```bash
 php artisan tinker --execute="App\Models\User::where('email','you@example.com')->update(['role'=>'administrator']);"
 ```
+
+---
+
+## Mail
+
+The deployment sends real email with no setup. `render.yaml` carries SMTP
+credentials for **Ethereal**, a throwaway capture mailbox: it accepts mail over
+real SMTP with real authentication, then publishes it on the web rather than
+delivering it onward.
+
+To read what the site has sent, sign in at <https://ethereal.email> with the
+`MAIL_USERNAME` and `MAIL_PASSWORD` from `render.yaml`.
+
+Ethereal is used instead of Gmail for two reasons. Gmail refuses an ordinary
+account password over SMTP and demands an App Password, which requires 2-Step
+Verification on somebody's personal Google account — not a credential a shared
+demo can carry. And every seeded account has an address at the fake
+`@scholardesk.demo` domain, which no real mail server can deliver to, so with
+Gmail the demo accounts and working mail were mutually exclusive. Ethereal
+accepts any recipient, so `researcher@scholardesk.demo` receives mail normally.
+
+What this does **not** do is put a message in anyone's real inbox. Point
+`MAIL_HOST`, `MAIL_USERNAME` and `MAIL_PASSWORD` at a real provider for that,
+and move the credentials to `sync: false` so they live in the dashboard rather
+than the repo.
+
+Users control their own email under **Settings → Notifications & email**: the
+card reports whether mail is configured and through which transport, each
+notification type can be switched off individually, and *Send test email*
+proves delivery. Turning a type off silences only the email — the in-app
+notification and the bell badge are unaffected.
 
 ---
 
@@ -200,7 +229,10 @@ missing CA bundle, but the image ships one.
 **AI panels say "not configured".** `GROQ_API_KEY` is unset. Semantic search
 and related papers keep working without it — those run on the local embedder.
 
-**Password reset never arrives.** `MAIL_MAILER` is `failover`, which tries
-Gmail and then falls back to writing the message to the log. That is
-deliberate: a missing app password degrades instead of throwing a 500. Check
-the logs to confirm the message was generated, then fix the credentials.
+**Password reset never arrives.** Look for it at <https://ethereal.email>, not
+in a real inbox — see [Mail](#mail). If it is not there either, `MAIL_MAILER`
+is `failover`, which tries SMTP and then falls back to writing the message to
+the log. That is deliberate: broken credentials degrade instead of throwing a
+500. Check the logs to confirm the message was generated, then fix the
+credentials. **Settings → Notifications & email** reports the transport in use
+and will send a test message whose failure is shown rather than swallowed.
