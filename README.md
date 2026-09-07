@@ -243,24 +243,9 @@ app/
   Policies/       ownership and collection-membership authorisation
   Services/       PaperService, RagService, EmbeddingService, MailService, …
   Support/        small value helpers (DOI parsing, markdown sanitising)
-notes/            architecture and wiring write-ups
 resources/views/  Blade templates and components
 module 1..4/      course submission packages (see below)
 ```
-
-### Understanding the codebase
-
-**[notes/architecture.md](notes/architecture.md)** explains how the system
-actually works, rather than what it satisfies: the layered architecture and why
-each seam is where it is, the schema and its relationship types, and the RAG
-pipeline from PDF bytes to a cited answer.
-**[notes/wiring.md](notes/wiring.md)** traces how one upload touches all four
-modules. Both have illustrated companions —
-[visual-architecture.html](notes/visual-architecture.html) and
-[visual-wiring.html](notes/visual-wiring.html).
-
-Start there for the mechanism. The `module N/features.md` documents are the
-per-requirement reference.
 
 ### Course submission packages
 
