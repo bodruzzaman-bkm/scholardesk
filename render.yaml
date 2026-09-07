@@ -156,8 +156,30 @@ services:
       # ScholarDesk's own test mail. Before this ever carries real mail, move
       # MAIL_USERNAME / MAIL_PASSWORD / MAIL_FROM_ADDRESS back to `sync: false`
       # and set them in the dashboard.
+      # log, not failover — and not because the credentials below are wrong.
+      #
+      # Render's free instances block outbound traffic to ports 25, 465 and
+      # 587, which is every port an SMTP server listens on. The connection is
+      # dropped rather than refused, so it hangs instead of failing, and
+      # `php artisan serve` is single-process: one request stuck on a mail
+      # socket stops the site answering anything until the platform restarts
+      # it. Sending mail from a free instance took the whole service down.
+      #
+      # No SMTP provider avoids this. Gmail, Ethereal, anything — the port is
+      # the problem, not the host. The ways out, in order of cost:
+      #   1. upgrade to any paid instance; set MAIL_MAILER=failover and the
+      #      Ethereal credentials below start working immediately
+      #   2. use a provider with an HTTPS API instead of SMTP — Resend,
+      #      Postmark and Mailgun all publish one, and 443 is not blocked.
+      #      config/mail.php already declares those transports; each needs its
+      #      composer package and an API key
+      #   3. leave this as log and demonstrate mail locally, where nothing is
+      #      blocked and the Ethereal credentials work as they stand
+      #
+      # As log, mail is written to the container log and Settings honestly
+      # reports the mailer as unconfigured, which is the truth.
       - key: MAIL_MAILER
-        value: failover
+        value: log
       - key: MAIL_SCHEME
         value: smtp
       - key: MAIL_HOST

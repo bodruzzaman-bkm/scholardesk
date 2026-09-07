@@ -128,32 +128,64 @@ php artisan tinker --execute="App\Models\User::where('email','you@example.com')-
 
 ## Mail
 
-The deployment sends real email with no setup. `render.yaml` carries SMTP
-credentials for **Ethereal**, a throwaway capture mailbox: it accepts mail over
-real SMTP with real authentication, then publishes it on the web rather than
-delivering it onward.
+**A free instance cannot send email, and trying takes the site down.**
 
-To read what the site has sent, sign in at <https://ethereal.email> with the
-`MAIL_USERNAME` and `MAIL_PASSWORD` from `render.yaml`.
+Render blocks outbound traffic to ports 25, 465 and 587 on free web services.
+That is every port an SMTP server listens on, so no provider avoids it — the
+port is the problem, not the host. Worse, the traffic is dropped rather than
+refused, so the connection hangs instead of failing. `docker/entrypoint.sh`
+serves with `php artisan serve`, a single-process server, so one request stuck
+on a mail socket stops the site answering anything at all until the platform
+restarts the container. A notification email becomes an outage.
 
-Ethereal is used instead of Gmail for two reasons. Gmail refuses an ordinary
-account password over SMTP and demands an App Password, which requires 2-Step
-Verification on somebody's personal Google account — not a credential a shared
-demo can carry. And every seeded account has an address at the fake
-`@scholardesk.demo` domain, which no real mail server can deliver to, so with
-Gmail the demo accounts and working mail were mutually exclusive. Ethereal
-accepts any recipient, so `researcher@scholardesk.demo` receives mail normally.
+Two defences are in place. `MAIL_MAILER` is `log` here, so nothing opens a
+socket; and `config/mail.php` sets an SMTP `timeout` of 10 seconds instead of
+Laravel's `null`, which would inherit PHP's 60-second `default_socket_timeout`.
+Should the mailer ever be switched on by mistake, it now fails as a caught
+error rather than as downtime.
 
-What this does **not** do is put a message in anyone's real inbox. Point
-`MAIL_HOST`, `MAIL_USERNAME` and `MAIL_PASSWORD` at a real provider for that,
-and move the credentials to `sync: false` so they live in the dashboard rather
-than the repo.
+As `log`, mail is written to the container log, and **Settings → Notifications
+& email** reports the mailer as unconfigured — which is the truth.
 
-Users control their own email under **Settings → Notifications & email**: the
+### Making mail actually work
+
+In order of cost:
+
+1. **Upgrade to any paid instance.** The port block is free-tier only. Set
+   `MAIL_MAILER=failover` and the Ethereal credentials already in `render.yaml`
+   start working immediately.
+2. **Use an HTTPS API instead of SMTP.** Resend, Postmark and Mailgun each
+   publish one, and port 443 is not blocked. `config/mail.php` already declares
+   those transports; each needs its Composer package and an API key.
+3. **Demonstrate it locally**, where nothing is blocked and the committed
+   Ethereal credentials work as they stand. See below.
+
+### Ethereal
+
+The credentials in `render.yaml` are for **Ethereal**, a throwaway capture
+mailbox: it accepts mail over real SMTP with real authentication, then
+publishes it on the web instead of delivering it onward. Read what has been
+sent by signing in at <https://ethereal.email> with that `MAIL_USERNAME` and
+`MAIL_PASSWORD`.
+
+Ethereal rather than Gmail, because Gmail refuses an ordinary account password
+over SMTP and demands an App Password, which requires 2-Step Verification on
+somebody's personal Google account — not a credential a shared demo can carry.
+It also accepts any recipient, which matters here: every seeded account lives
+at the fake `@scholardesk.demo` domain that no real mail server can deliver to,
+so with Gmail the demo accounts and working mail were mutually exclusive.
+
+To run the demo locally, set `MAIL_MAILER=failover` in `.env` alongside those
+credentials and `php artisan serve`. Sending works, and the messages appear in
+the Ethereal web inbox.
+
+### The settings card
+
+Users control their own email under **Settings → Notifications & email**. The
 card reports whether mail is configured and through which transport, each
 notification type can be switched off individually, and *Send test email*
-proves delivery. Turning a type off silences only the email — the in-app
-notification and the bell badge are unaffected.
+surfaces a failure rather than swallowing it. Turning a type off silences only
+the email — the in-app notification and the bell badge are unaffected.
 
 ---
 

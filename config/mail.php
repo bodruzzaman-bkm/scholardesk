@@ -45,7 +45,24 @@ return [
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            /*
+             | Seconds to wait on the SMTP socket. Stock Laravel ships null,
+             | which defers to PHP's default_socket_timeout — 60 seconds.
+             |
+             | That default is dangerous here. The container serves with
+             | `php artisan serve` (docker/entrypoint.sh), a single-process
+             | server, so one request waiting on a mail socket is the whole
+             | site waiting: every other request queues behind it and the
+             | platform returns 502 long before PHP gives up. A host that
+             | drops outbound SMTP silently — Render's free tier blocks
+             | ports 25, 465 and 587 — turns a background nicety like a
+             | notification email into an outage.
+             |
+             | Ten seconds is long enough for a real handshake over a slow
+             | link and short enough that a blackholed port surfaces as a
+             | caught error rather than downtime.
+             */
+            'timeout' => env('MAIL_TIMEOUT', 10),
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
