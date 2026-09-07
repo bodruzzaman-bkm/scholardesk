@@ -46,9 +46,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Settings (UI language)
+    // Settings (UI language, email notifications)
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings/locale', [SettingsController::class, 'updateLocale'])->name('settings.locale');
+    Route::patch('/settings/email', [SettingsController::class, 'updateEmailPrefs'])->name('settings.email');
+    Route::post('/settings/email/test', [SettingsController::class, 'sendTestEmail'])->name('settings.email.test');
 
     // Search (keyword + semantic)
     Route::get('/search', [SearchController::class, 'index'])->name('search');

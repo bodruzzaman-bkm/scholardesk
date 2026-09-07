@@ -60,6 +60,18 @@ return [
     'no_results' => 'No results.',
     'language' => 'Language',
 
+    // Email notifications
+    'email_notifications' => 'Notifications & email',
+    'send_test_email' => 'Send test email',
+    'email_prefs_saved' => 'Email preferences saved.',
+    'test_email_sent' => 'Test email sent to :email.',
+    'test_email_failed' => 'The test email could not be sent:',
+    'notif_comment' => 'Comments on my papers and collections',
+    'notif_share' => 'Collections shared with me',
+    'notif_mention' => 'Mentions of me',
+    'notif_ai_done' => 'AI summaries and reviews finishing',
+    'notif_system' => 'System announcements',
+
     // Analytics (requirement 21)
     'analytics' => 'Analytics',
     'papers' => 'Papers',

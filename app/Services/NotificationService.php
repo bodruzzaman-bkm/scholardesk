@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\Mail;
 /**
  * In-app notifications, with an optional email copy.
  *
- * The in-app row is the source of truth; email is best-effort. A mail failure
- * is swallowed and logged, because a down SMTP server must never break the
- * request that triggered the notification (ScholarDesk's rule, kept).
+ * The in-app row is the source of truth; email is best-effort and opt-out per
+ * type (User::wantsEmailFor). A mail failure is swallowed and logged, because a
+ * down SMTP server must never break the request that triggered the notification
+ * (ScholarDesk's rule, kept). MailService::sendTest() is the deliberate
+ * exception, where the error is the point.
  */
 class NotificationService
 {
@@ -26,7 +28,7 @@ class NotificationService
             'link' => $link,
         ]);
 
-        $this->email($user, $message, $link);
+        $this->email($user, $type, $message, $link);
     }
 
     /**
@@ -55,8 +57,13 @@ class NotificationService
         $user->inAppNotifications()->unread()->update(['is_read' => true]);
     }
 
-    private function email(User $user, string $message, ?string $link): void
+    private function email(User $user, NotificationType $type, string $message, ?string $link): void
     {
+        // The in-app row is already written; the user can decline the copy.
+        if (! $user->wantsEmailFor($type)) {
+            return;
+        }
+
         // Nothing to send to in local/array/log-less setups without a mailer.
         if (config('mail.default') === null) {
             return;

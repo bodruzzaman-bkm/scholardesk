@@ -70,6 +70,63 @@
                 </div>
             </div>
 
+            {{-- Email notifications: the only user-facing control over mail. --}}
+            <div class="card card-body">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ __('app.email_notifications') }}</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">
+                    Every notification always appears in the app under the bell. These switches only decide
+                    whether a copy is also emailed to you.
+                </p>
+
+                @if ($mailConfigured)
+                    <p class="text-sm text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-md p-3">
+                        Sending via <span class="font-medium">{{ $mailTransport }}</span>.
+                    </p>
+                @else
+                    <p class="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+                        Not configured. Set <code class="font-mono text-xs">MAIL_USERNAME</code> and
+                        <code class="font-mono text-xs">MAIL_PASSWORD</code> (a Google App Password, not your
+                        account password) in <code class="font-mono text-xs">.env</code>. Until then mail is
+                        written to <code class="font-mono text-xs">storage/logs/laravel.log</code> instead of
+                        being delivered, and the switches below have no visible effect.
+                    </p>
+                @endif
+
+                <form method="POST" action="{{ route('settings.email') }}" class="mt-4">
+                    @csrf
+                    @method('PATCH')
+
+                    <fieldset>
+                        <legend class="sr-only">{{ __('app.email_notifications') }}</legend>
+                        <div class="space-y-2">
+                            @foreach ($notificationTypes as $type)
+                                <label for="email-{{ $type->value }}"
+                                       class="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+                                    <input type="checkbox" id="email-{{ $type->value }}" name="types[]"
+                                           value="{{ $type->value }}"
+                                           @checked($emailPrefs[$type->value])
+                                           class="rounded border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span><span aria-hidden="true">{{ $type->icon() }}</span> {{ $type->label() }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </fieldset>
+
+                    <x-primary-button type="submit" class="mt-4">{{ __('app.save') }}</x-primary-button>
+                </form>
+                <x-input-error :messages="$errors->get('types')" class="mt-2" />
+
+                <form method="POST" action="{{ route('settings.email.test') }}"
+                      class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    @csrf
+                    <x-secondary-button type="submit">{{ __('app.send_test_email') }}</x-secondary-button>
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        Sends one message to {{ auth()->user()->email }}. If it fails, the reason is shown
+                        here rather than hidden in the log.
+                    </p>
+                </form>
+            </div>
+
             {{-- Account --}}
             <div class="card card-body">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Account</h3>

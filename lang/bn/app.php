@@ -57,6 +57,18 @@ return [
     'no_results' => 'কোনো ফলাফল নেই।',
     'language' => 'ভাষা',
 
+    // Email notifications
+    'email_notifications' => 'বিজ্ঞপ্তি ও ইমেল',
+    'send_test_email' => 'পরীক্ষামূলক ইমেল পাঠান',
+    'email_prefs_saved' => 'ইমেল পছন্দ সংরক্ষিত হয়েছে।',
+    'test_email_sent' => ':email ঠিকানায় পরীক্ষামূলক ইমেল পাঠানো হয়েছে।',
+    'test_email_failed' => 'পরীক্ষামূলক ইমেল পাঠানো যায়নি:',
+    'notif_comment' => 'আমার পেপার ও সংগ্রহে মন্তব্য',
+    'notif_share' => 'আমার সাথে শেয়ার করা সংগ্রহ',
+    'notif_mention' => 'আমাকে উল্লেখ করা হলে',
+    'notif_ai_done' => 'এআই সারাংশ ও পর্যালোচনা সম্পন্ন হলে',
+    'notif_system' => 'সিস্টেম ঘোষণা',
+
     // Analytics (requirement 21)
     'analytics' => 'বিশ্লেষণ',
     'papers' => 'পেপার',
