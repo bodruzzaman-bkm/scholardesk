@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScholarDesk — Visual Architecture</title>
+<style>
+  :root{
+    --bg:#fbfbfa; --panel:#ffffff; --ink:#1c1c1a; --ink-soft:#5c5c56; --ink-faint:#8a8a82;
+    --rule:#e2e0da; --rule-soft:#efedE8;
+    --route:#2563eb;   --route-bg:#e8f0fe;
+    --ctrl:#15803d;    --ctrl-bg:#e6f6ec;
+    --policy:#dc2626;  --policy-bg:#fdeaea;
+    --svc:#b45309;     --svc-bg:#fdf1dc;
+    --data:#7c3aed;    --data-bg:#f2ebfe;
+    --ai:#0891b2;      --ai-bg:#e2f5f9;
+    --dead:#9a9a92;    --dead-bg:#f1f0ec;
+    --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.045);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#16161a; --panel:#1e1e24; --ink:#eceaf0; --ink-soft:#a9a7b2; --ink-faint:#77757f;
+      --rule:#33323b; --rule-soft:#2a2930;
+      --route:#7ba7ff; --route-bg:#1d2b4a;
+      --ctrl:#65d38f;  --ctrl-bg:#16341f;
+      --policy:#ff8585; --policy-bg:#41201f;
+      --svc:#e5a94a;   --svc-bg:#3a2c12;
+      --data:#b995ff;  --data-bg:#2c2145;
+      --ai:#57c6dd;    --ai-bg:#123640;
+      --dead:#6f6e78;  --dead-bg:#26262c;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.62 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1020px;margin:0 auto;padding:0 24px 96px}
+  header{padding:64px 0 36px;border-bottom:1px solid var(--rule);margin-bottom:44px}
+  h1{font-size:34px;line-height:1.15;letter-spacing:-.02em;margin:0 0 10px;font-weight:680}
+  .sub{color:var(--ink-soft);font-size:16px;margin:0;max-width:62ch}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .chip{font:600 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em;
+    padding:7px 11px;border-radius:999px;background:var(--panel);border:1px solid var(--rule);color:var(--ink-soft)}
+  h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);
+    font-weight:700;margin:64px 0 6px;padding-top:26px;border-top:1px solid var(--rule)}
+  h2:first-of-type{border-top:0;padding-top:0}
+  h3{font-size:22px;letter-spacing:-.01em;margin:0 0 14px;font-weight:640}
+  p{margin:0 0 16px;max-width:70ch;color:var(--ink-soft)}
+  p strong{color:var(--ink);font-weight:620}
+  code{font:500 13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+    background:var(--rule-soft);padding:2px 5px;border-radius:4px;color:var(--ink)}
+  figure{margin:26px 0 34px;padding:26px 22px 18px;background:var(--panel);
+    border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);overflow-x:auto}
+  figure svg{display:block;width:100%;max-width:100%;height:auto;min-width:520px}
+  figcaption{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule-soft);
+    font-size:13.5px;color:var(--ink-soft);max-width:78ch}
+  figcaption b{color:var(--ink);font-weight:620}
+  .note{border-left:3px solid var(--svc);background:var(--svc-bg);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:14px;color:var(--ink)}
+  .note b{font-weight:660}
+  table{border-collapse:collapse;width:100%;margin:22px 0 30px;font-size:13.5px}
+  th{text-align:left;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--ink-faint);font-weight:700;padding:0 12px 9px;border-bottom:1px solid var(--rule)}
+  td{padding:11px 12px;border-bottom:1px solid var(--rule-soft);vertical-align:top;color:var(--ink-soft)}
+  td:first-child{color:var(--ink)}
+  tbody tr:last-child td{border-bottom:0}
+  .mono{font:500 12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .tag{display:inline-block;font:600 10.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.02em;
+    padding:4px 7px;border-radius:5px;white-space:nowrap;margin:1px 3px 1px 0}
+  .t-get{background:var(--ctrl-bg);color:var(--ctrl)}
+  .t-post{background:var(--route-bg);color:var(--route)}
+  .t-del{background:var(--policy-bg);color:var(--policy)}
+  .t-own{background:var(--policy-bg);color:var(--policy)}
+  .t-collab{background:var(--ai-bg);color:var(--ai)}
+  .t-admin{background:var(--data-bg);color:var(--data)}
+  .t-any{background:var(--dead-bg);color:var(--dead)}
+  .t-w{background:var(--svc-bg);color:var(--svc)}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin:0 0 22px;padding:14px 16px;
+    background:var(--panel);border:1px solid var(--rule);border-radius:10px}
+  .legend span{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft)}
+  .sw{width:13px;height:13px;border-radius:3.5px;flex:none}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:16px;margin:24px 0 30px}
+  .card{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:17px 18px}
+  .card h4{margin:0 0 7px;font-size:14.5px;font-weight:660;color:var(--ink)}
+  .card p{margin:0;font-size:13.5px;line-height:1.55}
+  .card.acc{border-left:3px solid var(--policy)}
+  .card.acc2{border-left:3px solid var(--ai)}
+  .card.acc3{border-left:3px solid var(--svc)}
+  @media(max-width:640px){
+    .wrap{padding:0 16px 64px} h1{font-size:27px} header{padding:40px 0 28px}
+    figure{padding:18px 14px 14px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>ScholarDesk — Visual Architecture</h1>
+  <p class="sub">Every diagram here shows a mechanism you would otherwise have to assemble
+     from prose: where data flows, which components talk, and what a request passes
+     through before it becomes a row in the database.</p>
+  <div class="meta">
+    <span class="chip">Laravel 13 · PHP 8.3</span>
+    <span class="chip">84 routes</span>
+    <span class="chip">16 services</span>
+    <span class="chip">25 tables</span>
+    <span class="chip">6 policies</span>
+    <span class="chip">1 queued job</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ 1 ═══════════════════════════ -->
+<h2>01 — Orientation</h2>
+<h3>The whole system in one picture</h3>
+<p>A server-rendered Laravel monolith. The browser talks to one application; that
+   application talks to a database it owns and two kinds of outside service it
+   treats as <strong>optional</strong>.</p>
+
+<div class="legend">
+  <span><i class="sw" style="background:var(--route)"></i>HTTP surface</span>
+  <span><i class="sw" style="background:var(--ctrl)"></i>Controllers</span>
+  <span><i class="sw" style="background:var(--svc)"></i>Services (domain logic)</span>
+  <span><i class="sw" style="background:var(--data)"></i>Storage</span>
+  <span><i class="sw" style="background:var(--dead)"></i>Outside world</span>
+</div>
+
+<figure>
+<svg viewBox="0 0 900 468" role="img" aria-label="Browser talks to the ScholarDesk application, which contains a route layer, five feature subsystems and a service layer, and which reads and writes one database while making optional calls to metadata registries and a language model provider.">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+    </marker>
+    <marker id="a1d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="var(--dead)"/>
+    </marker>
+  </defs>
+  <g font-family="ui-sans-serif,system-ui,sans-serif">
+
+    <!-- browser -->
+    <rect x="8" y="176" width="118" height="86" rx="10" fill="var(--panel)" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="8" y="176" width="118" height="21" rx="10" fill="var(--rule-soft)"/>
+    <rect x="8" y="187" width="118" height="10" fill="var(--rule-soft)"/>
+    <circle cx="22" cy="187" r="3.2" fill="var(--dead)"/><circle cx="33" cy="187" r="3.2" fill="var(--dead)"/>
+    <text x="67" y="226" text-anchor="middle" font-size="13.5" font-weight="620" fill="currentColor">Browser</text>
+    <text x="67" y="245" text-anchor="middle" font-size="11" fill="var(--ink-faint)">Blade + Alpine</text>
+
+    <!-- app container -->
+    <rect x="158" y="26" width="470" height="386" rx="14" fill="none" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="6 5"/>
+    <text x="176" y="48" font-size="11" font-weight="700" letter-spacing="1.4" fill="var(--ink-faint)">SCHOLARDESK (LARAVEL)</text>
+
+    <!-- routes -->
+    <rect x="178" y="62" width="430" height="46" rx="9" fill="var(--route-bg)" stroke="var(--route)" stroke-width="1.5"/>
+    <text x="393" y="82" text-anchor="middle" font-size="13" font-weight="640" fill="var(--route)">Routes + Middleware</text>
+    <text x="393" y="99" text-anchor="middle" font-size="10.5" fill="var(--route)">84 routes · auth · locale · suspension · admin · throttle</text>
+
+    <!-- subsystems -->
+    <rect x="178" y="126" width="80" height="70" rx="8" fill="var(--ctrl-bg)" stroke="var(--ctrl)" stroke-width="1.3"/>
+    <text x="218" y="155" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ctrl)">Library</text>
+    <text x="218" y="171" text-anchor="middle" font-size="9.5" fill="var(--ctrl)">papers</text>
+    <text x="218" y="183" text-anchor="middle" font-size="9.5" fill="var(--ctrl)">tags · search</text>
+
+    <rect x="266" y="126" width="80" height="70" rx="8" fill="var(--ctrl-bg)" stroke="var(--ctrl)" stroke-width="1.3"/>
+    <text x="306" y="155" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ctrl)">Reader</text>
+    <text x="306" y="171" text-anchor="middle" font-size="9.5" fill="var(--ctrl)">pdf.js</text>
+    <text x="306" y="183" text-anchor="middle" font-size="9.5" fill="var(--ctrl)">highlights</text>
+
+    <rect x="354" y="126" width="80" height="70" rx="8" fill="var(--ai-bg)" stroke="var(--ai)" stroke-width="1.3"/>
+    <text x="394" y="155" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ai)">AI / RAG</text>
+    <text x="394" y="171" text-anchor="middle" font-size="9.5" fill="var(--ai)">ask · summarise</text>
+    <text x="394" y="183" text-anchor="middle" font-size="9.5" fill="var(--ai)">review</text>
+
+    <rect x="442" y="126" width="80" height="70" rx="8" fill="var(--ctrl-bg)" stroke="var(--ctrl)" stroke-width="1.3"/>
+    <text x="482" y="155" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ctrl)">Collab</text>
+    <text x="482" y="171" text-anchor="middle" font-size="9.5" fill="var(--ctrl)">collections</text>
+    <text x="482" y="183" text-anchor="middle" font-size="9.5" fill="var(--ctrl)">comments</text>
+
+    <rect x="530" y="126" width="78" height="70" rx="8" fill="var(--ctrl-bg)" stroke="var(--ctrl)" stroke-width="1.3"/>
+    <text x="569" y="155" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ctrl)">Admin</text>
+    <text x="569" y="171" text-anchor="middle" font-size="9.5" fill="var(--ctrl)">moderation</text>
+    <text x="569" y="183" text-anchor="middle" font-size="9.5" fill="var(--ctrl)">analytics</text>
+
+    <!-- services -->
+    <rect x="178" y="214" width="430" height="52" rx="9" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.5"/>
+    <text x="393" y="235" text-anchor="middle" font-size="13" font-weight="640" fill="var(--svc)">16 Services — the only layer that knows <tspan font-style="italic">how</tspan></text>
+    <text x="393" y="253" text-anchor="middle" font-size="10.5" fill="var(--svc)">PaperService · RagService · CollectionService · AnalyticsService · …</text>
+
+    <!-- models -->
+    <rect x="178" y="284" width="430" height="42" rx="9" fill="var(--panel)" stroke="currentColor" stroke-width="1.3"/>
+    <text x="393" y="303" text-anchor="middle" font-size="12.5" font-weight="620" fill="currentColor">15 Eloquent models — relationships, scopes, casts</text>
+    <text x="393" y="318" text-anchor="middle" font-size="10.5" fill="var(--ink-faint)">a scope is a named, reusable WHERE clause</text>
+
+    <!-- policies badge -->
+    <rect x="178" y="344" width="205" height="44" rx="9" fill="var(--policy-bg)" stroke="var(--policy)" stroke-width="1.4"/>
+    <text x="280" y="362" text-anchor="middle" font-size="12" font-weight="640" fill="var(--policy)">6 Policies</text>
+    <text x="280" y="378" text-anchor="middle" font-size="10" fill="var(--policy)">may THIS user touch THIS row?</text>
+
+    <rect x="399" y="344" width="209" height="44" rx="9" fill="var(--panel)" stroke="var(--rule)" stroke-width="1.4"/>
+    <text x="503" y="362" text-anchor="middle" font-size="12" font-weight="640" fill="currentColor">1 queued job</text>
+    <text x="503" y="378" text-anchor="middle" font-size="10" fill="var(--ink-faint)">IndexPaper · after the response</text>
+
+    <!-- database -->
+    <g>
+      <ellipse cx="762" cy="118" rx="56" ry="15" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"/>
+      <path d="M706,118 v78 a56,15 0 0 0 112,0 v-78" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"/>
+      <text x="762" y="152" text-anchor="middle" font-size="12.5" font-weight="640" fill="var(--data)">Database</text>
+      <text x="762" y="169" text-anchor="middle" font-size="10" fill="var(--data)">25 tables</text>
+      <text x="762" y="183" text-anchor="middle" font-size="10" fill="var(--data)">SQLite / Postgres</text>
+    </g>
+
+    <!-- disk -->
+    <rect x="700" y="228" width="124" height="52" rx="9" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.4"/>
+    <text x="762" y="249" text-anchor="middle" font-size="12" font-weight="640" fill="var(--data)">PDF storage</text>
+    <text x="762" y="266" text-anchor="middle" font-size="10" fill="var(--data)">public disk</text>
+
+    <!-- external -->
+    <rect x="700" y="308" width="124" height="46" rx="9" fill="var(--dead-bg)" stroke="var(--dead)" stroke-width="1.3" stroke-dasharray="4 3"/>
+    <text x="762" y="327" text-anchor="middle" font-size="11" font-weight="620" fill="var(--dead)">Crossref · OpenAlex</text>
+    <text x="762" y="342" text-anchor="middle" font-size="10" fill="var(--dead)">DataCite · arXiv</text>
+
+    <rect x="700" y="366" width="124" height="46" rx="9" fill="var(--dead-bg)" stroke="var(--dead)" stroke-width="1.3" stroke-dasharray="4 3"/>
+    <text x="762" y="385" text-anchor="middle" font-size="11" font-weight="620" fill="var(--dead)">Groq | Gemini</text>
+    <text x="762" y="400" text-anchor="middle" font-size="10" fill="var(--dead)">language model</text>
+
+    <!-- arrows -->
+    <g stroke="currentColor" stroke-width="1.6" fill="none" marker-end="url(#a1)">
+      <path d="M128,206 L176,90"/>
+      <path d="M176,232 L128,232"/>
+    </g>
+    <text x="152" y="140" text-anchor="middle" font-size="9.5" fill="var(--ink-faint)" transform="rotate(-59 152 140)">request</text>
+    <text x="152" y="248" text-anchor="middle" font-size="9.5" fill="var(--ink-faint)">HTML</text>
+
+    <g stroke="var(--data)" stroke-width="1.6" fill="none" marker-end="url(#a1)" color="var(--data)">
+      <path d="M610,240 L698,180"/>
+      <path d="M610,252 L698,252"/>
+    </g>
+    <g stroke="var(--dead)" stroke-width="1.5" fill="none" stroke-dasharray="5 4" marker-end="url(#a1d)">
+      <path d="M610,258 L698,328"/>
+      <path d="M610,262 L698,386"/>
+    </g>
+    <text x="668" y="308" font-size="9.5" fill="var(--dead)">optional</text>
+    <text x="668" y="366" font-size="9.5" fill="var(--dead)">optional</text>
+  </g>
+</svg>
+<figcaption><b>The dashed arrows are the whole design philosophy.</b> Both outside
+services can be unreachable — no API key, a down registry — and the library,
+reader, notes, search, export and collaboration keep working. Nothing solid on
+this diagram depends on anything dashed.</figcaption>
+</figure>
+
+<!-- ═══════════════════════════ 2 ═══════════════════════════ -->
+<h2>02 — Lifecycle</h2>
+<h3>What happens when a request arrives</h3>
+<p>Nine stages, and four places a request can die before reaching the database.
+   The three <em>gates</em> ask different questions, and confusing them is the
+   usual way an authorization bug gets in.</p>
+
+<figure>
+<svg viewBox="0 0 900 604" role="img" aria-label="A request passes through route matching, middleware, route-model binding, form request validation, controller, policy, service and model layers before reaching the database, with exits to login redirect, 404, 422 and 403 along the way, and an indexing job dispatched after the response is sent.">
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+    </marker>
+    <marker id="a2r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="var(--policy)"/>
+    </marker>
+    <marker id="a2g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="var(--ctrl)"/>
+    </marker>
+  </defs>
+  <g font-family="ui-sans-serif,system-ui,sans-serif">
+
+    <!-- spine -->
+    <line x1="300" y1="46" x2="300" y2="470" stroke="var(--rule)" stroke-width="2"/>
+
+    <!-- stage helper: boxes at x=176 w=248 -->
+    <!-- 1 -->
+    <rect x="176" y="22" width="248" height="40" rx="8" fill="var(--panel)" stroke="currentColor" stroke-width="1.5"/>
+    <text x="300" y="47" text-anchor="middle" font-size="13" font-weight="640" fill="currentColor">HTTP request</text>
+
+    <!-- 2 route -->
+    <rect x="176" y="78" width="248" height="44" rx="8" fill="var(--route-bg)" stroke="var(--route)" stroke-width="1.5"/>
+    <text x="300" y="99" text-anchor="middle" font-size="12.5" font-weight="640" fill="var(--route)">Route match</text>
+    <text x="300" y="114" text-anchor="middle" font-size="10" fill="var(--route)">routes/web.php names URL + action</text>
+
+    <!-- 3 middleware GATE -->
+    <rect x="176" y="138" width="248" height="52" rx="8" fill="var(--route-bg)" stroke="var(--route)" stroke-width="2.4"/>
+    <text x="300" y="157" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--route)">Middleware  ⟨gate 1⟩</text>
+    <text x="300" y="172" text-anchor="middle" font-size="10" fill="var(--route)">auth · SetLocale · NotSuspended</text>
+    <text x="300" y="184" text-anchor="middle" font-size="10" fill="var(--route)">admin · throttle:20,1</text>
+
+    <!-- 4 binding -->
+    <rect x="176" y="206" width="248" height="44" rx="8" fill="var(--panel)" stroke="currentColor" stroke-width="1.5"/>
+    <text x="300" y="227" text-anchor="middle" font-size="12.5" font-weight="640" fill="currentColor">Route-model binding</text>
+    <text x="300" y="242" text-anchor="middle" font-size="10" fill="var(--ink-faint)">{paper} → Paper::findOrFail</text>
+
+    <!-- 5 formrequest GATE -->
+    <rect x="176" y="266" width="248" height="48" rx="8" fill="var(--panel)" stroke="currentColor" stroke-width="2.4"/>
+    <text x="300" y="286" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">FormRequest  ⟨gate 2⟩</text>
+    <text x="300" y="302" text-anchor="middle" font-size="10" fill="var(--ink-faint)">rules() run before the controller exists</text>
+
+    <!-- 6 controller -->
+    <rect x="176" y="330" width="248" height="44" rx="8" fill="var(--ctrl-bg)" stroke="var(--ctrl)" stroke-width="1.5"/>
+    <text x="300" y="351" text-anchor="middle" font-size="12.5" font-weight="640" fill="var(--ctrl)">Controller</text>
+    <text x="300" y="366" text-anchor="middle" font-size="10" fill="var(--ctrl)">authorise · delegate · return</text>
+
+    <!-- 7 policy GATE -->
+    <rect x="176" y="390" width="248" height="48" rx="8" fill="var(--policy-bg)" stroke="var(--policy)" stroke-width="2.4"/>
+    <text x="300" y="410" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--policy)">Policy  ⟨gate 3⟩</text>
+    <text x="300" y="426" text-anchor="middle" font-size="10" fill="var(--policy)">may THIS user touch THIS row?</text>
+
+    <!-- 8 service -->
+    <rect x="176" y="454" width="248" height="44" rx="8" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.5"/>
+    <text x="300" y="475" text-anchor="middle" font-size="12.5" font-weight="640" fill="var(--svc)">Service</text>
+    <text x="300" y="490" text-anchor="middle" font-size="10" fill="var(--svc)">domain logic · transactions</text>
+
+    <!-- 9 db -->
+    <rect x="176" y="514" width="248" height="44" rx="8" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"/>
+    <text x="300" y="535" text-anchor="middle" font-size="12.5" font-weight="640" fill="var(--data)">Model → Database</text>
+    <text x="300" y="550" text-anchor="middle" font-size="10" fill="var(--data)">scopes become the WHERE clause</text>
+
+    <!-- down arrows -->
+    <g stroke="currentColor" stroke-width="1.7" fill="none" marker-end="url(#a2)">
+      <path d="M300,62 L300,76"/><path d="M300,122 L300,136"/><path d="M300,190 L300,204"/>
+      <path d="M300,250 L300,264"/><path d="M300,314 L300,328"/><path d="M300,374 L300,388"/>
+      <path d="M300,438 L300,452"/><path d="M300,498 L300,512"/>
+    </g>
+
+    <!-- exits right -->
+    <g stroke="var(--policy)" stroke-width="1.6" fill="none" marker-end="url(#a2r)" stroke-dasharray="5 4">
+      <path d="M424,164 L510,164"/>
+      <path d="M424,228 L510,228"/>
+      <path d="M424,290 L510,290"/>
+      <path d="M424,414 L510,414"/>
+    </g>
+    <g font-size="11" font-weight="640" fill="var(--policy)">
+      <text x="518" y="161">redirect to login</text>
+      <text x="518" y="176" font-size="9.5" font-weight="400">or 403 · suspended · rate-limited</text>
+      <text x="518" y="225">404</text>
+      <text x="518" y="240" font-size="9.5" font-weight="400">no such row</text>
+      <text x="518" y="287">422 / back with errors</text>
+      <text x="518" y="302" font-size="9.5" font-weight="400">bad input never reaches code</text>
+      <text x="518" y="411">403</text>
+      <text x="518" y="426" font-size="9.5" font-weight="400">wrong user for this row</text>
+    </g>
+
+    <!-- return path -->
+    <g stroke="var(--ctrl)" stroke-width="1.7" fill="none" marker-end="url(#a2g)">
+      <path d="M176,536 L118,536 L118,44 L174,44"/>
+    </g>
+    <text x="108" y="300" text-anchor="middle" font-size="10.5" font-weight="620" fill="var(--ctrl)" transform="rotate(-90 108 300)">data flows back up → Blade view</text>
+
+    <!-- after response -->
+    <line x1="60" y1="580" x2="840" y2="580" stroke="var(--svc)" stroke-width="1.6" stroke-dasharray="7 5"/>
+    <text x="70" y="574" font-size="10.5" font-weight="700" letter-spacing=".5" fill="var(--svc)">RESPONSE ALREADY SENT TO THE BROWSER</text>
+    <rect x="560" y="518" width="278" height="40" rx="8" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.5"/>
+    <text x="699" y="534" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--svc)">IndexPaper → afterResponse()</text>
+    <text x="699" y="549" text-anchor="middle" font-size="9.5" fill="var(--svc)">a 40-page PDF never delays the upload</text>
+    <path d="M424,536 L558,536" stroke="var(--svc)" stroke-width="1.6" fill="none" marker-end="url(#a2)" color="var(--svc)"/>
+  </g>
+</svg>
+<figcaption>The three gates in order: <b>middleware</b> asks <em>may this request
+proceed at all?</em> — get it wrong and the whole feature is open. <b>FormRequest</b>
+asks <em>is this input well-formed?</em> — get it wrong and you ship a 500 where a
+422 belonged. <b>Policy</b> asks <em>may this user touch this row?</em> — get it
+wrong and one user reads another's library.</figcaption>
+</figure>
+
+<!-- ═══════════════════════════ 3 ═══════════════════════════ -->
+<h2>03 — Access</h2>
+<h3>Who can see what</h3>
+<p>Almost every security question in this codebase reduces to picking one of two
+   query boundaries. They look similar and are <strong>not</strong> interchangeable.</p>
+
+<figure>
+<svg viewBox="0 0 900 356" role="img" aria-label="Two panels over the same eight papers. The ownedBy scope selects only the five papers a user owns. The accessibleBy scope selects those five plus two papers owned by someone else that sit in a shared collection, leaving one unrelated paper out.">
+  <defs>
+    <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="ui-sans-serif,system-ui,sans-serif">
+
+    <!-- ============ PANEL 1 ============ -->
+    <text x="24" y="26" font-size="13.5" font-weight="700" fill="currentColor">Paper::ownedBy($me)</text>
+    <text x="24" y="44" font-size="11.5" fill="var(--ink-faint)">“my library” — the listing, filters, every analytics number</text>
+
+    <rect x="24" y="58" width="392" height="196" rx="12" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+
+    <!-- my papers group -->
+    <rect x="40" y="76" width="196" height="160" rx="10" fill="var(--ctrl-bg)" stroke="var(--ctrl)" stroke-width="2"/>
+    <text x="138" y="96" text-anchor="middle" font-size="10.5" font-weight="700" letter-spacing=".6" fill="var(--ctrl)">PAPERS I OWN</text>
+    <g fill="var(--ctrl)" opacity=".85">
+      <rect x="56" y="108" width="48" height="54" rx="5"/>
+      <rect x="112" y="108" width="48" height="54" rx="5"/>
+      <rect x="168" y="108" width="48" height="54" rx="5"/>
+      <rect x="56" y="170" width="48" height="54" rx="5"/>
+      <rect x="112" y="170" width="48" height="54" rx="5"/>
+    </g>
+    <text x="192" y="202" font-size="26" font-weight="700" fill="var(--ctrl)">5</text>
+
+    <!-- shared collection -->
+    <rect x="252" y="76" width="148" height="100" rx="10" fill="var(--panel)" stroke="var(--rule)" stroke-width="1.6" stroke-dasharray="5 4"/>
+    <text x="326" y="96" text-anchor="middle" font-size="10.5" font-weight="700" letter-spacing=".6" fill="var(--ink-faint)">SHARED COLLECTION</text>
+    <g fill="var(--dead)" opacity=".55">
+      <rect x="268" y="106" width="48" height="54" rx="5"/>
+      <rect x="324" y="106" width="48" height="54" rx="5"/>
+    </g>
+    <text x="326" y="192" text-anchor="middle" font-size="11" fill="var(--dead)">not selected</text>
+
+    <!-- unrelated -->
+    <rect x="252" y="200" width="148" height="40" rx="8" fill="var(--dead-bg)" stroke="var(--rule)" stroke-width="1.2"/>
+    <rect x="268" y="208" width="30" height="24" rx="4" fill="var(--dead)" opacity=".45"/>
+    <text x="332" y="224" text-anchor="middle" font-size="10.5" fill="var(--dead)">stranger’s paper</text>
+
+    <!-- ============ PANEL 2 ============ -->
+    <text x="484" y="26" font-size="13.5" font-weight="700" fill="currentColor">Paper::accessibleBy($me)</text>
+    <text x="484" y="44" font-size="11.5" fill="var(--ink-faint)">the retrieval boundary — search + every AI route</text>
+
+    <rect x="484" y="58" width="392" height="196" rx="12" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+
+    <rect x="500" y="76" width="196" height="160" rx="10" fill="var(--ctrl-bg)" stroke="var(--ctrl)" stroke-width="2"/>
+    <text x="598" y="96" text-anchor="middle" font-size="10.5" font-weight="700" letter-spacing=".6" fill="var(--ctrl)">PAPERS I OWN</text>
+    <g fill="var(--ctrl)" opacity=".85">
+      <rect x="516" y="108" width="48" height="54" rx="5"/>
+      <rect x="572" y="108" width="48" height="54" rx="5"/>
+      <rect x="628" y="108" width="48" height="54" rx="5"/>
+      <rect x="516" y="170" width="48" height="54" rx="5"/>
+      <rect x="572" y="170" width="48" height="54" rx="5"/>
+    </g>
+    <text x="652" y="202" font-size="26" font-weight="700" fill="var(--ctrl)">5</text>
+
+    <rect x="712" y="76" width="148" height="100" rx="10" fill="var(--ai-bg)" stroke="var(--ai)" stroke-width="2.4"/>
+    <text x="786" y="96" text-anchor="middle" font-size="10.5" font-weight="700" letter-spacing=".6" fill="var(--ai)">SHARED COLLECTION</text>
+    <g fill="var(--ai)" opacity=".85">
+      <rect x="728" y="106" width="48" height="54" rx="5"/>
+      <rect x="784" y="106" width="48" height="54" rx="5"/>
+    </g>
+    <text x="786" y="192" text-anchor="middle" font-size="11" font-weight="640" fill="var(--ai)">+2 · I am a member</text>
+
+    <rect x="712" y="200" width="148" height="40" rx="8" fill="var(--dead-bg)" stroke="var(--rule)" stroke-width="1.2"/>
+    <rect x="728" y="208" width="30" height="24" rx="4" fill="var(--dead)" opacity=".45"/>
+    <text x="792" y="224" text-anchor="middle" font-size="10.5" fill="var(--dead)">still excluded</text>
+
+    <!-- bottom callout -->
+    <rect x="24" y="278" width="852" height="62" rx="10" fill="var(--policy-bg)" stroke="var(--policy)" stroke-width="1.5"/>
+    <text x="44" y="302" font-size="12.5" font-weight="700" fill="var(--policy)">Retrieval is the last step before text reaches a language model.</text>
+    <text x="44" y="322" font-size="11.5" fill="var(--policy)">VectorSearchService resolves this boundary to a concrete paper-id list BEFORE scoring a single chunk — an unscoped query here would leak one user’s papers into another user’s answer.</text>
+  </g>
+</svg>
+<figcaption>Same eight papers, two different answers. <b>Keyword search uses the
+left boundary; semantic search and all six AI routes use the right one</b> — because
+that is where shared material lives. The one paper excluded by both is owned by
+someone you share nothing with.</figcaption>
+</figure>
+
+<h3>What each role may actually do</h3>
+<p><code>PaperPolicy</code> splits <em>read</em> from <em>write</em> exactly along the
+   collaboration seam.</p>
+
+<table>
+  <thead><tr><th>Action on a paper</th><th>Owner</th><th>Collaborator</th><th>Admin</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">view</td><td>✅</td><td>✅</td><td>✅</td><td>listing and detail page</td></tr>
+    <tr><td class="mono">read</td><td>✅</td><td>✅</td><td>—</td><td>open the PDF in the reader</td></tr>
+    <tr><td class="mono">useAi</td><td>✅</td><td>✅</td><td>—</td><td>AI follows read access</td></tr>
+    <tr><td class="mono">comment</td><td>✅</td><td>✅</td><td>—</td><td>a comment is <em>addressed</em> to the other people who can see it</td></tr>
+    <tr><td class="mono">annotate</td><td>✅</td><td>❌</td><td>—</td><td>highlights and notes are one person's private working material</td></tr>
+    <tr><td class="mono">update</td><td>✅</td><td>❌</td><td>—</td><td>metadata belongs to the owner</td></tr>
+    <tr><td class="mono">delete</td><td>✅</td><td>❌</td><td>—</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>An administrator is not a super-user here.</b>
+<code>CollectionPolicy</code> never consults <code>isAdmin()</code> — an admin cannot
+silently open your private collection. The only place the two role systems meet is
+comment moderation.</div>
+
+<div class="cols">
+  <div class="card acc"><h4>Global role · <code>users.role</code></h4>
+    <p><b>researcher</b> — the default.<br><b>administrator</b> — promoted by an
+    existing admin. Gated by the <code>admin</code> middleware.</p></div>
+  <div class="card acc2"><h4>Collection role · <code>collection_members.role</code></h4>
+    <p><b>viewer</b> — read papers, notes, comments, feed.<br>
+       <b>editor</b> — + add/remove papers, comment, run AI.<br>
+       <b>owner</b> — + manage members, rename, delete.</p></div>
+  <div class="card acc3"><h4>They are independent</h4>
+    <p>Being an administrator grants nothing inside someone else's collection.
+       Being a collection owner grants nothing in the admin portal.</p></div>
+</div>
+
+<!-- ═══════════════════════════ 4 ═══════════════════════════ -->
+<h2>04 — Ingest</h2>
+<h3>How a PDF becomes searchable</h3>
+<p>Everything after the dashed line runs <strong>after the browser already has its
+   response</strong>. Every failure branch is recorded on the paper rather than thrown.</p>
+
+<figure>
+<svg viewBox="0 0 900 348" role="img" aria-label="An uploaded PDF is stored and a paper row created, the response is sent, then a queued job extracts text, chunks it, embeds each chunk and stores the vectors. Failure branches for no file, scanned PDF and malformed PDF each record a status on the paper instead of throwing.">
+  <defs>
+    <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+    </marker>
+    <marker id="a4r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="var(--dead)"/>
+    </marker>
+  </defs>
+  <g font-family="ui-sans-serif,system-ui,sans-serif">
+
+    <!-- upload -->
+    <rect x="16" y="34" width="128" height="56" rx="9" fill="var(--route-bg)" stroke="var(--route)" stroke-width="1.6"/>
+    <text x="80" y="57" text-anchor="middle" font-size="12" font-weight="640" fill="var(--route)">POST /papers</text>
+    <text x="80" y="74" text-anchor="middle" font-size="10" fill="var(--route)">PDF · DOI · URL</text>
+
+    <rect x="180" y="34" width="140" height="56" rx="9" fill="var(--ctrl-bg)" stroke="var(--ctrl)" stroke-width="1.6"/>
+    <text x="250" y="57" text-anchor="middle" font-size="12" font-weight="640" fill="var(--ctrl)">paper row created</text>
+    <text x="250" y="74" text-anchor="middle" font-size="10" fill="var(--ctrl)">file → public disk</text>
+
+    <rect x="356" y="34" width="140" height="56" rx="9" fill="var(--panel)" stroke="currentColor" stroke-width="1.5"/>
+    <text x="426" y="57" text-anchor="middle" font-size="12" font-weight="640" fill="currentColor">302 redirect</text>
+    <text x="426" y="74" text-anchor="middle" font-size="10" fill="var(--ink-faint)">user sees the paper</text>
+
+    <g stroke="currentColor" stroke-width="1.7" fill="none" marker-end="url(#a4)">
+      <path d="M144,62 L178,62"/><path d="M320,62 L354,62"/>
+    </g>
+
+    <!-- divider -->
+    <line x1="16" y1="112" x2="884" y2="112" stroke="var(--svc)" stroke-width="1.6" stroke-dasharray="7 5"/>
+    <text x="16" y="106" font-size="10.5" font-weight="700" letter-spacing=".5" fill="var(--svc)">↓ EVERYTHING BELOW RUNS AFTER THE RESPONSE IS FLUSHED — IndexPaper::dispatch()->afterResponse()</text>
+
+    <!-- pipeline -->
+    <rect x="16" y="140" width="150" height="60" rx="9" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.6"/>
+    <text x="91" y="164" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--svc)">PdfTextService</text>
+    <text x="91" y="181" text-anchor="middle" font-size="10" fill="var(--svc)">extract raw text</text>
+
+    <rect x="204" y="140" width="150" height="60" rx="9" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.6"/>
+    <text x="279" y="164" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--svc)">ChunkService</text>
+    <text x="279" y="181" text-anchor="middle" font-size="10" fill="var(--svc)">4000 chars · 400 overlap</text>
+
+    <rect x="392" y="140" width="150" height="60" rx="9" fill="var(--ai-bg)" stroke="var(--ai)" stroke-width="1.6"/>
+    <text x="467" y="164" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ai)">EmbeddingService</text>
+    <text x="467" y="181" text-anchor="middle" font-size="10" fill="var(--ai)">→ 256 floats per chunk</text>
+
+    <rect x="580" y="140" width="150" height="60" rx="9" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"/>
+    <text x="655" y="164" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--data)">paper_chunks</text>
+    <text x="655" y="181" text-anchor="middle" font-size="10" fill="var(--data)">one transaction</text>
+
+    <rect x="768" y="140" width="116" height="60" rx="9" fill="var(--ctrl-bg)" stroke="var(--ctrl)" stroke-width="1.6"/>
+    <text x="826" y="164" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ctrl)">indexed ✓</text>
+    <text x="826" y="181" text-anchor="middle" font-size="10" fill="var(--ctrl)">searchable</text>
+
+    <g stroke="currentColor" stroke-width="1.7" fill="none" marker-end="url(#a4)">
+      <path d="M166,170 L202,170"/><path d="M354,170 L390,170"/>
+      <path d="M542,170 L578,170"/><path d="M730,170 L766,170"/>
+    </g>
+
+    <!-- failure lane -->
+    <rect x="16" y="248" width="868" height="76" rx="10" fill="var(--dead-bg)" stroke="var(--rule)" stroke-width="1.4"/>
+    <text x="34" y="270" font-size="11" font-weight="700" letter-spacing=".5" fill="var(--ink-faint)">FAILURE BRANCHES — recorded on the paper, never thrown</text>
+
+    <rect x="34" y="280" width="176" height="30" rx="6" fill="var(--panel)" stroke="var(--rule)"/>
+    <text x="122" y="300" text-anchor="middle" font-size="10.5" fill="var(--ink-soft)">no file → <tspan font-weight="640">no_file</tspan></text>
+
+    <rect x="224" y="280" width="200" height="30" rx="6" fill="var(--panel)" stroke="var(--rule)"/>
+    <text x="324" y="300" text-anchor="middle" font-size="10.5" fill="var(--ink-soft)">scanned PDF → <tspan font-weight="640">no_text</tspan></text>
+
+    <rect x="438" y="280" width="200" height="30" rx="6" fill="var(--panel)" stroke="var(--rule)"/>
+    <text x="538" y="300" text-anchor="middle" font-size="10.5" fill="var(--ink-soft)">malformed → <tspan font-weight="640">error</tspan></text>
+
+    <rect x="652" y="280" width="216" height="30" rx="6" fill="var(--panel)" stroke="var(--rule)"/>
+    <text x="760" y="300" text-anchor="middle" font-size="10.5" fill="var(--ink-soft)">dispatch failed → <tspan font-weight="640">logged</tspan></text>
+
+    <g stroke="var(--dead)" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#a4r)">
+      <path d="M91,200 L91,246"/><path d="M279,200 L279,246"/>
+    </g>
+  </g>
+</svg>
+<figcaption><b>One bad PDF degrades one paper's AI features and nothing else.</b>
+A scanned, image-only PDF yields no text — the paper is still in the library,
+still readable, still exportable, still citable. Only search and the assistant
+skip it, and the UI says so plainly.</figcaption>
+</figure>
+
+<!-- ═══════════════════════════ 5 ═══════════════════════════ -->
+<h2>05 — Retrieval</h2>
+<h3>How a question becomes a cited answer</h3>
+
+<figure>
+<svg viewBox="0 0 900 402" role="img" aria-label="A question is embedded, the accessible paper list is resolved first, chunks are cosine-scored and the top six retrieved, assembled into a context under a character budget, sent to the language model, and the answer's citations are filtered to those actually referenced before both turns are persisted.">
+  <defs>
+    <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="ui-sans-serif,system-ui,sans-serif">
+
+    <!-- row 1 -->
+    <rect x="16" y="26" width="150" height="56" rx="9" fill="var(--route-bg)" stroke="var(--route)" stroke-width="1.6"/>
+    <text x="91" y="49" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--route)">POST /ai/ask</text>
+    <text x="91" y="66" text-anchor="middle" font-size="10" fill="var(--route)">throttle 20/min</text>
+
+    <rect x="204" y="26" width="150" height="56" rx="9" fill="var(--ai-bg)" stroke="var(--ai)" stroke-width="1.6"/>
+    <text x="279" y="49" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ai)">embed(question)</text>
+    <text x="279" y="66" text-anchor="middle" font-size="10" fill="var(--ai)">same hashing as ingest</text>
+
+    <rect x="392" y="26" width="176" height="56" rx="9" fill="var(--policy-bg)" stroke="var(--policy)" stroke-width="2.4"/>
+    <text x="480" y="49" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--policy)">resolve accessible ids</text>
+    <text x="480" y="66" text-anchor="middle" font-size="10" fill="var(--policy)">BEFORE any scoring</text>
+
+    <rect x="606" y="26" width="150" height="56" rx="9" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.6"/>
+    <text x="681" y="49" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--svc)">score every chunk</text>
+    <text x="681" y="66" text-anchor="middle" font-size="10" fill="var(--svc)">cosine, exact not ANN</text>
+
+    <g stroke="currentColor" stroke-width="1.7" fill="none" marker-end="url(#a5)">
+      <path d="M166,54 L202,54"/><path d="M354,54 L390,54"/><path d="M568,54 L604,54"/>
+    </g>
+
+    <!-- thresholds -->
+    <rect x="16" y="112" width="740" height="94" rx="10" fill="var(--panel)" stroke="var(--rule)" stroke-width="1.4"/>
+    <text x="34" y="134" font-size="11" font-weight="700" letter-spacing=".5" fill="var(--ink-faint)">THREE THRESHOLDS — THREE DIFFERENT AUDIENCES</text>
+
+    <!-- scale -->
+    <line x1="60" y1="176" x2="700" y2="176" stroke="var(--rule)" stroke-width="6" stroke-linecap="round"/>
+    <line x1="60" y1="176" x2="112" y2="176" stroke="var(--dead)" stroke-width="6" stroke-linecap="round"/>
+    <line x1="112" y1="176" x2="300" y2="176" stroke="var(--svc)" stroke-width="6"/>
+    <line x1="300" y1="176" x2="700" y2="176" stroke="var(--ctrl)" stroke-width="6" stroke-linecap="round"/>
+
+    <circle cx="112" cy="176" r="5.5" fill="var(--panel)" stroke="currentColor" stroke-width="2"/>
+    <circle cx="180" cy="176" r="5.5" fill="var(--panel)" stroke="currentColor" stroke-width="2"/>
+    <circle cx="300" cy="176" r="5.5" fill="var(--panel)" stroke="currentColor" stroke-width="2"/>
+
+    <text x="112" y="160" text-anchor="middle" font-size="10.5" font-weight="700" fill="currentColor">0.01</text>
+    <text x="180" y="160" text-anchor="middle" font-size="10.5" font-weight="700" fill="currentColor">0.15</text>
+    <text x="300" y="160" text-anchor="middle" font-size="10.5" font-weight="700" fill="currentColor">0.32</text>
+
+    <text x="86" y="196" text-anchor="middle" font-size="9.5" fill="var(--dead)">noise</text>
+    <text x="206" y="196" text-anchor="middle" font-size="9.5" fill="var(--svc)">shown, labelled “weak match”</text>
+    <text x="500" y="196" text-anchor="middle" font-size="9.5" fill="var(--ctrl)">shown as a confident result</text>
+
+    <text x="716" y="152" font-size="9.5" fill="var(--ink-faint)">fed to the</text>
+    <text x="716" y="164" font-size="9.5" fill="var(--ink-faint)">model ≥ 0.01</text>
+    <text x="716" y="182" font-size="9.5" fill="var(--ink-faint)">shown to a</text>
+    <text x="716" y="194" font-size="9.5" fill="var(--ink-faint)">human ≥ 0.15</text>
+
+    <!-- row 2 -->
+    <rect x="16" y="236" width="176" height="60" rx="9" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.6"/>
+    <text x="104" y="260" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--svc)">assemble context</text>
+    <text x="104" y="277" text-anchor="middle" font-size="10" fill="var(--svc)">stop at the char budget</text>
+
+    <rect x="230" y="236" width="176" height="60" rx="9" fill="var(--dead-bg)" stroke="var(--dead)" stroke-width="1.6" stroke-dasharray="5 4"/>
+    <text x="318" y="260" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--dead)">Groq | Gemini</text>
+    <text x="318" y="277" text-anchor="middle" font-size="10" fill="var(--dead)">down → 503, page survives</text>
+
+    <rect x="444" y="236" width="176" height="60" rx="9" fill="var(--ai-bg)" stroke="var(--ai)" stroke-width="1.6"/>
+    <text x="532" y="260" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ai)">filter citations</text>
+    <text x="532" y="277" text-anchor="middle" font-size="10" fill="var(--ai)">keep only [P12] actually used</text>
+
+    <rect x="658" y="236" width="176" height="60" rx="9" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"/>
+    <text x="746" y="260" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--data)">chat_messages</text>
+    <text x="746" y="277" text-anchor="middle" font-size="10" fill="var(--data)">both turns persisted</text>
+
+    <g stroke="currentColor" stroke-width="1.7" fill="none" marker-end="url(#a5)">
+      <path d="M192,266 L228,266"/><path d="M406,266 L442,266"/><path d="M620,266 L656,266"/>
+      <path d="M681,84 L681,100 L104,100 L104,234"/>
+    </g>
+    <text x="392" y="94" text-anchor="middle" font-size="9.5" fill="var(--ink-faint)">top 6 chunks</text>
+
+    <!-- footnote -->
+    <rect x="16" y="326" width="818" height="56" rx="9" fill="var(--ai-bg)" stroke="var(--ai)" stroke-width="1.4"/>
+    <text x="36" y="348" font-size="11.5" font-weight="700" fill="var(--ai)">Why the citation filter needs a regex, not a string match</text>
+    <text x="36" y="367" font-size="11" fill="var(--ai)">The prompt asks for “[P12]”. Models drift to 【P12】, (P12), **P12**. Matching the literal string missed real citations and silently listed every retrieved source instead.</text>
+  </g>
+</svg>
+<figcaption>The <b>0.32 threshold labels rather than hides.</b> A higher floor was
+tried and rejected: it did suppress off-topic queries, but it also dropped short
+on-topic ones — “tumour detection in scans” scores 0.28 against a paper plainly
+about exactly that, because four words share little surface with a long passage.
+Losing a paper the user knows is there is worse than showing one they can dismiss
+at a glance.</figcaption>
+</figure>
+
+<!-- ═══════════════════════════ 6 ═══════════════════════════ -->
+<h2>06 — Wiring</h2>
+<h3>One route, traced end to end</h3>
+<p>This is the shape every row in the route reference below is a compressed
+   version of.</p>
+
+<figure>
+<svg viewBox="0 0 900 300" role="img" aria-label="The route POST /collections/7/members passes through auth middleware, route-model binding, the manageMembers policy, inline validation, CollectionService::addMember, and writes to collection_members, activities and notifications_inapp, after which five separate access checks change their answer for the new member.">
+  <defs>
+    <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+    </marker>
+    <marker id="a6c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="var(--ai)"/>
+    </marker>
+  </defs>
+  <g font-family="ui-sans-serif,system-ui,sans-serif">
+    <text x="16" y="22" font-size="12.5" font-weight="700" font-family="ui-monospace,Menlo,monospace" fill="currentColor">POST /collections/7/members  {email, role: "editor"}</text>
+
+    <rect x="16" y="38" width="126" height="52" rx="8" fill="var(--route-bg)" stroke="var(--route)" stroke-width="1.6"/>
+    <text x="79" y="59" text-anchor="middle" font-size="11" font-weight="640" fill="var(--route)">auth</text>
+    <text x="79" y="76" text-anchor="middle" font-size="9.5" fill="var(--route)">+ not suspended</text>
+
+    <rect x="166" y="38" width="126" height="52" rx="8" fill="var(--panel)" stroke="currentColor" stroke-width="1.5"/>
+    <text x="229" y="59" text-anchor="middle" font-size="11" font-weight="640" fill="currentColor">bind {collection}</text>
+    <text x="229" y="76" text-anchor="middle" font-size="9.5" fill="var(--ink-faint)">404 if missing</text>
+
+    <rect x="316" y="38" width="146" height="52" rx="8" fill="var(--policy-bg)" stroke="var(--policy)" stroke-width="2.2"/>
+    <text x="389" y="59" text-anchor="middle" font-size="11" font-weight="700" fill="var(--policy)">manageMembers</text>
+    <text x="389" y="76" text-anchor="middle" font-size="9.5" fill="var(--policy)">owner only → else 403</text>
+
+    <rect x="486" y="38" width="126" height="52" rx="8" fill="var(--panel)" stroke="currentColor" stroke-width="1.5"/>
+    <text x="549" y="59" text-anchor="middle" font-size="11" font-weight="640" fill="currentColor">validate</text>
+    <text x="549" y="76" text-anchor="middle" font-size="9.5" fill="var(--ink-faint)">email · Enum(role)</text>
+
+    <rect x="636" y="38" width="150" height="52" rx="8" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.6"/>
+    <text x="711" y="59" text-anchor="middle" font-size="11" font-weight="640" fill="var(--svc)">addMember()</text>
+    <text x="711" y="76" text-anchor="middle" font-size="9.5" fill="var(--svc)">Owner → downgraded</text>
+
+    <g stroke="currentColor" stroke-width="1.6" fill="none" marker-end="url(#a6)">
+      <path d="M142,64 L164,64"/><path d="M292,64 L314,64"/>
+      <path d="M462,64 L484,64"/><path d="M612,64 L634,64"/>
+    </g>
+
+    <!-- writes -->
+    <rect x="636" y="112" width="150" height="34" rx="7" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"/>
+    <text x="711" y="134" text-anchor="middle" font-size="10.5" font-weight="640" fill="var(--data)">collection_members</text>
+    <rect x="636" y="152" width="150" height="34" rx="7" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"/>
+    <text x="711" y="174" text-anchor="middle" font-size="10.5" font-weight="640" fill="var(--data)">activities</text>
+    <rect x="636" y="192" width="150" height="34" rx="7" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"/>
+    <text x="711" y="214" text-anchor="middle" font-size="10.5" font-weight="640" fill="var(--data)">notifications_inapp</text>
+
+    <g stroke="var(--data)" stroke-width="1.5" fill="none" marker-end="url(#a6)" color="var(--data)">
+      <path d="M711,90 L711,110"/>
+    </g>
+
+    <!-- effect -->
+    <rect x="16" y="112" width="590" height="114" rx="10" fill="var(--ai-bg)" stroke="var(--ai)" stroke-width="1.6"/>
+    <text x="36" y="134" font-size="11.5" font-weight="700" fill="var(--ai)">ONE ROW ADDED → FIVE CHECKS CHANGE THEIR ANSWER</text>
+    <g font-size="10.5" fill="var(--ai)" font-family="ui-monospace,Menlo,monospace">
+      <text x="36" y="156">Collection::accessibleBy</text><text x="250" y="156" fill="var(--ai)">→ collection appears in their list</text>
+      <text x="36" y="174">Paper::accessibleBy</text><text x="250" y="174">→ its papers become retrievable</text>
+      <text x="36" y="192">PaperPolicy::read</text><text x="250" y="192">→ they can open the PDFs</text>
+      <text x="36" y="210">PaperPolicy::useAi</text><text x="250" y="210">→ they can ask questions of them</text>
+    </g>
+    <rect x="28" y="216" width="566" height="0" fill="none"/>
+
+    <rect x="16" y="240" width="770" height="44" rx="9" fill="var(--policy-bg)" stroke="var(--policy)" stroke-width="1.5"/>
+    <text x="36" y="260" font-size="11.5" font-weight="700" fill="var(--policy)">…and one that does NOT change:  PaperPolicy::annotate stays false</text>
+    <text x="36" y="276" font-size="10.5" fill="var(--policy)">Highlights and notes remain the owner’s. All six checks read membership from the same place, which is why one row moves five answers.</text>
+  </g>
+</svg>
+<figcaption>Adding a collaborator is one <code>updateOrCreate</code> on
+<code>collection_members</code>. Everything else follows, because
+<b>five separate access checks all read membership from that one table.</b></figcaption>
+</figure>
+
+<!-- ═══════════════════════════ 7 ═══════════════════════════ -->
+<h2>07 — Reference</h2>
+<h3>The routes, grouped</h3>
+<p>84 application routes. Rather than nine columns, each row answers three
+   questions: <strong>who is allowed</strong>, <strong>what runs</strong>, and
+   <strong>what changes</strong>.</p>
+
+<div class="legend">
+  <span><i class="sw" style="background:var(--policy)"></i><b>owner</b> — owner of the row only</span>
+  <span><i class="sw" style="background:var(--ai)"></i><b>collab</b> — owner or collection member</span>
+  <span><i class="sw" style="background:var(--data)"></i><b>admin</b> — administrator role</span>
+  <span><i class="sw" style="background:var(--dead)"></i><b>any</b> — any signed-in user</span>
+</div>
+
+<h4 style="margin:34px 0 0;font-size:15px">Library — 12 routes</h4>
+<table>
+  <thead><tr><th style="width:31%">Route</th><th style="width:13%">Who</th><th style="width:31%">What runs</th><th>What changes</th></tr></thead>
+  <tbody>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /papers</td><td><span class="tag t-any">any</span></td><td>PaperService::paginateLibrary</td><td>— <em>reads only</em></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /papers/create</td><td><span class="tag t-any">any</span></td><td>—</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /papers</td><td><span class="tag t-any">any</span></td><td>createForUser → MetadataService</td><td><span class="tag t-w">papers</span> + queues indexing</td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /papers/batch</td><td><span class="tag t-any">any</span></td><td>createManyFromUploads</td><td><span class="tag t-w">papers ×N</span></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /papers/{p}</td><td><span class="tag t-collab">collab</span></td><td>eager-load tags, notes, comments, chat</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /papers/{p}/edit</td><td><span class="tag t-own">owner</span></td><td>—</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-post">PUT</span> /papers/{p}</td><td><span class="tag t-own">owner</span></td><td>PaperService::update <em>(transaction)</em></td><td><span class="tag t-w">papers</span> <span class="tag t-w">collection_paper</span> <span class="tag t-w">paper_tag</span></td></tr>
+    <tr><td class="mono"><span class="tag t-del">DEL</span> /papers/{p}</td><td><span class="tag t-own">owner</span></td><td>PaperService::delete</td><td><span class="tag t-w">papers</span> + the PDF on disk</td></tr>
+    <tr><td class="mono"><span class="tag t-post">PATCH</span> /papers/{p}/status</td><td><span class="tag t-own">owner</span></td><td>setStatus + ActivityService ×N</td><td><span class="tag t-w">papers</span> <span class="tag t-w">activities</span></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /papers/{p}/read</td><td><span class="tag t-collab">collab</span></td><td>the pdf.js reader + AI panel</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /papers/{p}/export</td><td><span class="tag t-collab">collab</span></td><td>CitationService::format</td><td>— <em>downloads .bib / .txt</em></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /papers/{p}/reindex</td><td><span class="tag t-own">owner</span></td><td>queueIndexing</td><td>rebuilds <span class="tag t-w">paper_chunks</span></td></tr>
+  </tbody>
+</table>
+
+<h4 style="margin:34px 0 0;font-size:15px">Collections &amp; collaboration — 13 routes</h4>
+<table>
+  <thead><tr><th style="width:31%">Route</th><th style="width:13%">Who</th><th style="width:31%">What runs</th><th>What changes</th></tr></thead>
+  <tbody>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /collections</td><td><span class="tag t-any">any</span></td><td>accessibleBy + withCount</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /collections</td><td><span class="tag t-any">any</span></td><td>CollectionService::create</td><td><span class="tag t-w">collections</span> <span class="tag t-w">collection_members</span> <em>(owner row)</em></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /collections/{c}</td><td>viewer+</td><td>papers, members, comments, feed</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-post">PUT</span> /collections/{c}</td><td>owner</td><td>—</td><td><span class="tag t-w">collections</span></td></tr>
+    <tr><td class="mono"><span class="tag t-del">DEL</span> /collections/{c}</td><td>owner</td><td>detach, then delete</td><td><span class="tag t-w">collections</span> — <b>papers survive</b></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /collections/{c}/papers</td><td>editor+</td><td>addPapers <em>(re-checks each paper)</em></td><td><span class="tag t-w">collection_paper</span> <span class="tag t-w">activities</span> <span class="tag t-w">notifications</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> …/papers/upload</td><td>editor+</td><td>createManyFromUploads + addPapers</td><td><span class="tag t-w">papers</span> <span class="tag t-w">collection_paper</span></td></tr>
+    <tr><td class="mono"><span class="tag t-del">DEL</span> …/papers/{p}</td><td>editor+</td><td>removePaper</td><td><span class="tag t-w">collection_paper</span> only — <b>paper survives</b></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> …/export</td><td>viewer+</td><td>CitationService::formatMany</td><td>— <em>downloads bibliography</em></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> …/bundle</td><td>viewer+</td><td>ExportService::collectionArchive</td><td>— <em>zip: PDFs + notes + bib</em></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> …/members</td><td>owner</td><td>addMember <em>(Owner→Editor)</em></td><td><span class="tag t-w">collection_members</span> <span class="tag t-w">activities</span> <span class="tag t-w">notifications</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">PATCH</span> …/members/{m}</td><td>owner</td><td>changeMemberRole</td><td><span class="tag t-w">collection_members</span></td></tr>
+    <tr><td class="mono"><span class="tag t-del">DEL</span> …/members/{m}</td><td>owner</td><td>removeMember</td><td><span class="tag t-w">collection_members</span> <span class="tag t-w">activities</span></td></tr>
+  </tbody>
+</table>
+
+<h4 style="margin:34px 0 0;font-size:15px">AI — 6 routes <span style="font-weight:400;color:var(--ink-faint);font-size:13px">· all return JSON, five are rate-limited</span></h4>
+<table>
+  <thead><tr><th style="width:31%">Route</th><th style="width:13%">Who</th><th style="width:31%">What runs</th><th>What changes</th></tr></thead>
+  <tbody>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /ai/ask</td><td><span class="tag t-any">any</span> <em>no policy</em></td><td>askLibrary → search('library')</td><td><span class="tag t-w">chat_sessions</span> <span class="tag t-w">chat_messages</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /ai/papers/{p}/summary</td><td><span class="tag t-collab">collab</span></td><td>summarizePaper → provider</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /ai/papers/{p}/ask</td><td><span class="tag t-collab">collab</span></td><td>askPaper → search('paper')</td><td><span class="tag t-w">chat_messages</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /ai/collections/{c}/ask</td><td>editor+</td><td>askCollection</td><td><span class="tag t-w">chat_messages</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /ai/collections/{c}/review</td><td>editor+</td><td>draftReview → provider</td><td><span class="tag t-w">literature_reviews</span> <span class="tag t-w">activities</span> <span class="tag t-w">notifications</span></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /ai/papers/{p}/related <b>*</b></td><td><span class="tag t-collab">collab</span></td><td>relatedPapers — local maths only</td><td>—</td></tr>
+  </tbody>
+</table>
+<p style="font-size:13px"><b>*</b> The only AI route outside the <code>throttle:20,1</code>
+group. It makes no provider call, so rate-limiting it would restrict a free
+operation.</p>
+
+<h4 style="margin:34px 0 0;font-size:15px">Reader, notes, comments, reports — 13 routes</h4>
+<table>
+  <thead><tr><th style="width:31%">Route</th><th style="width:13%">Who</th><th style="width:31%">What runs</th><th>What changes</th></tr></thead>
+  <tbody>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /papers/{p}/highlights</td><td><span class="tag t-collab">collab</span> <b>†</b></td><td>own highlights on this paper</td><td>— <em>JSON</em></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /papers/{p}/highlights</td><td><span class="tag t-own">owner</span> <b>†</b></td><td>validate rects, page, hex colour</td><td><span class="tag t-w">highlights</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">PATCH</span> /highlights/{h}</td><td><span class="tag t-own">author</span></td><td>—</td><td><span class="tag t-w">highlights</span></td></tr>
+    <tr><td class="mono"><span class="tag t-del">DEL</span> /highlights/{h}</td><td><span class="tag t-own">author</span></td><td>—</td><td><span class="tag t-w">highlights</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /papers/{p}/notes</td><td><span class="tag t-own">owner</span></td><td>+ ActivityService ×N collections</td><td><span class="tag t-w">notes</span> <span class="tag t-w">activities</span></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /notes/{n}/edit</td><td><span class="tag t-own">author</span></td><td>—</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-post">PUT</span> /notes/{n}</td><td><span class="tag t-own">author</span></td><td>—</td><td><span class="tag t-w">notes</span></td></tr>
+    <tr><td class="mono"><span class="tag t-del">DEL</span> /notes/{n}</td><td><span class="tag t-own">author</span></td><td>—</td><td><span class="tag t-w">notes</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /collections/{c}/comments</td><td>editor+</td><td>parent must be a root <em>in this collection</em></td><td><span class="tag t-w">comments</span> <span class="tag t-w">activities</span> <span class="tag t-w">notifications</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /papers/{p}/comments</td><td><span class="tag t-collab">collab</span></td><td>parent must be a root <em>on this paper</em></td><td><span class="tag t-w">comments</span> <span class="tag t-w">activities</span> <span class="tag t-w">notifications</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">PUT</span> /comments/{c}</td><td><span class="tag t-own">author</span></td><td>admins do <b>not</b> edit others' words</td><td><span class="tag t-w">comments</span></td></tr>
+    <tr><td class="mono"><span class="tag t-del">DEL</span> /comments/{c}</td><td><span class="tag t-own">author</span> or <span class="tag t-admin">admin</span></td><td>—</td><td><span class="tag t-w">comments</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">POST</span> /reports</td><td>can <em>see</em> it</td><td>class allowlist, updateOrCreate</td><td><span class="tag t-w">reports</span></td></tr>
+  </tbody>
+</table>
+<p style="font-size:13px"><b>†</b> The asymmetry is the fix, not a bug. The reader
+page admits collaborators, but this endpoint used to demand owner-only
+<code>annotate</code> — so a collaborator opening a shared PDF got a 403 banner on
+a page they were entitled to use. The query is already scoped to the current user,
+so relaxing it leaks nothing; their list is simply empty.</p>
+
+<h4 style="margin:34px 0 0;font-size:15px">Admin — 8 routes <span style="font-weight:400;color:var(--ink-faint);font-size:13px">· all behind the <code>admin</code> middleware</span></h4>
+<table>
+  <thead><tr><th style="width:31%">Route</th><th style="width:44%">What runs</th><th>What changes</th></tr></thead>
+  <tbody>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /admin</td><td>11 count queries + a disk scan</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /admin/users</td><td>Search::anyColumn on name, email</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-post">PATCH</span> /admin/users/{u}/role</td><td>refuses to change your <em>own</em> role</td><td><span class="tag t-w">users</span></td></tr>
+    <tr><td class="mono"><span class="tag t-post">PATCH</span> /admin/users/{u}/suspension</td><td>suspend, not delete — see below</td><td><span class="tag t-w">users</span></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /admin/comments</td><td>moderation queue, newest first</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-post">PATCH</span> /admin/comments/{c}/visibility</td><td>hide/unhide — reversible, keeps thread shape</td><td><span class="tag t-w">comments</span></td></tr>
+    <tr><td class="mono"><span class="tag t-get">GET</span> /admin/reports</td><td>defaults to open reports</td><td>—</td></tr>
+    <tr><td class="mono"><span class="tag t-post">PATCH</span> /admin/reports/{r}</td><td>resolve or dismiss</td><td><span class="tag t-w">reports</span></td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Suspension, not deletion.</b> Deleting a user cascades through
+their papers, collections, notes, highlights and comments — destroying a library
+to silence an account, irreversibly. A suspended user keeps everything and simply
+cannot sign in, and <code>EnsureUserIsNotSuspended</code> runs on every request so
+it takes hold immediately rather than when the session expires.</div>
+
+<h4 style="margin:34px 0 0;font-size:15px">Everything else — 32 routes</h4>
+<table>
+  <thead><tr><th style="width:31%">Group</th><th style="width:13%">Count</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Authentication</td><td>15</td><td>Breeze scaffold. The email-verification routes exist but are <b>inert</b> — <code>User</code> does not implement <code>MustVerifyEmail</code>, so the <code>verified</code> middleware was removed rather than left claiming a protection it did not apply.</td></tr>
+    <tr><td>Tags</td><td>4</td><td>Deleting a tag detaches it from every paper and leaves the papers alone.</td></tr>
+    <tr><td>Notifications</td><td>4</td><td>No policy class — every query is already rooted at <code>$request-&gt;user()</code>.</td></tr>
+    <tr><td>Dashboard / analytics</td><td>2</td><td>Overlap on purpose: one is a working surface, one answers “what does my library look like?”</td></tr>
+    <tr><td>Profile / settings</td><td>5</td><td>Locale is written to both the column and the session, so it applies to the response that changes it.</td></tr>
+    <tr><td>Search · home</td><td>2</td><td>One route, two engines, chosen by <code>?mode</code>.</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════ 8 ═══════════════════════════ -->
+<h2>08 — Data</h2>
+<h3>Which table is written by what</h3>
+<p>Four tables have <strong>exactly one writer each</strong>. That is the property
+   the rest of the design leans on.</p>
+
+<figure>
+<svg viewBox="0 0 900 300" role="img" aria-label="Four tables each have exactly one writer: paper_chunks written only by IndexingService, activities only by ActivityService, notifications_inapp only by NotificationService, and chat_messages only by RagService. Each single writer enables a specific guarantee.">
+  <g font-family="ui-sans-serif,system-ui,sans-serif">
+    <g>
+      <rect x="16" y="24" width="196" height="52" rx="9" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.6"/>
+      <text x="114" y="46" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--svc)">IndexingService</text>
+      <text x="114" y="63" text-anchor="middle" font-size="9.5" fill="var(--svc)">storeText()</text>
+      <rect x="272" y="24" width="180" height="52" rx="9" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"/>
+      <text x="362" y="55" text-anchor="middle" font-size="12" font-weight="640" font-family="ui-monospace,Menlo,monospace" fill="var(--data)">paper_chunks</text>
+      <line x1="212" y1="50" x2="266" y2="50" stroke="currentColor" stroke-width="1.8"/>
+      <polygon points="266,46 274,50 266,54" fill="currentColor"/>
+      <text x="472" y="45" font-size="11" font-weight="640" fill="currentColor">⇒ re-indexing can DELETE and rebuild wholesale</text>
+      <text x="472" y="62" font-size="10" fill="var(--ink-faint)">nothing else could be mid-write</text>
+    </g>
+    <g>
+      <rect x="16" y="92" width="196" height="52" rx="9" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.6"/>
+      <text x="114" y="114" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--svc)">ActivityService</text>
+      <text x="114" y="131" text-anchor="middle" font-size="9.5" fill="var(--svc)">record() · 8 call sites</text>
+      <rect x="272" y="92" width="180" height="52" rx="9" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"/>
+      <text x="362" y="123" text-anchor="middle" font-size="12" font-weight="640" font-family="ui-monospace,Menlo,monospace" fill="var(--data)">activities</text>
+      <line x1="212" y1="118" x2="266" y2="118" stroke="currentColor" stroke-width="1.8"/>
+      <polygon points="266,114 274,118 266,122" fill="currentColor"/>
+      <text x="472" y="113" font-size="11" font-weight="640" fill="currentColor">⇒ it can be non-throwing</text>
+      <text x="472" y="130" font-size="10" fill="var(--ink-faint)">a failed feed row must not roll back the real action</text>
+    </g>
+    <g>
+      <rect x="16" y="160" width="196" height="52" rx="9" fill="var(--svc-bg)" stroke="var(--svc)" stroke-width="1.6"/>
+      <text x="114" y="182" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--svc)">NotificationService</text>
+      <text x="114" y="199" text-anchor="middle" font-size="9.5" fill="var(--svc)">notify() · notifyMany()</text>
+      <rect x="272" y="160" width="180" height="52" rx="9" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"/>
+      <text x="362" y="185" text-anchor="middle" font-size="11.5" font-weight="640" font-family="ui-monospace,Menlo,monospace" fill="var(--data)">notifications_inapp</text>
+      <text x="362" y="201" text-anchor="middle" font-size="9" fill="var(--data)">source of truth</text>
+      <line x1="212" y1="186" x2="266" y2="186" stroke="currentColor" stroke-width="1.8"/>
+      <polygon points="266,182 274,186 266,190" fill="currentColor"/>
+      <text x="472" y="181" font-size="11" font-weight="640" fill="currentColor">⇒ email can be best-effort</text>
+      <text x="472" y="198" font-size="10" fill="var(--ink-faint)">a down SMTP server never breaks the request</text>
+    </g>
+    <g>
+      <rect x="16" y="228" width="196" height="52" rx="9" fill="var(--ai-bg)" stroke="var(--ai)" stroke-width="1.6"/>
+      <text x="114" y="250" text-anchor="middle" font-size="11.5" font-weight="640" fill="var(--ai)">RagService</text>
+      <text x="114" y="267" text-anchor="middle" font-size="9.5" fill="var(--ai)">answer()</text>
+      <rect x="272" y="228" width="180" height="52" rx="9" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"/>
+      <text x="362" y="259" text-anchor="middle" font-size="12" font-weight="640" font-family="ui-monospace,Menlo,monospace" fill="var(--data)">chat_messages</text>
+      <line x1="212" y1="254" x2="266" y2="254" stroke="currentColor" stroke-width="1.8"/>
+      <polygon points="266,250 274,254 266,258" fill="currentColor"/>
+      <text x="472" y="249" font-size="11" font-weight="640" fill="currentColor">⇒ the question is recorded before the model runs</text>
+      <text x="472" y="266" font-size="10" fill="var(--ink-faint)">a provider failure leaves a consistent session</text>
+    </g>
+  </g>
+</svg>
+<figcaption>Ask “what could possibly have written this row?” and for these four
+tables the answer is a single method. <b>That is what lets each of those methods
+make a promise the rest of the system relies on.</b></figcaption>
+</figure>
+
+<h3>The seams — what one class you replace</h3>
+<table>
+  <thead><tr><th style="width:44%">If you need to change…</th><th>Touch only</th></tr></thead>
+  <tbody>
+    <tr><td>Real neural embeddings instead of feature hashing</td><td class="mono">EmbeddingService <em>— storage format unchanged</em></td></tr>
+    <tr><td>pgvector instead of scoring in PHP</td><td class="mono">VectorSearchService</td></tr>
+    <tr><td>A different language-model provider</td><td class="mono">AiService::generate <em>— every call funnels through it</em></td></tr>
+    <tr><td>Another metadata registry</td><td class="mono">MetadataService <em>— add a resolver to the chain</em></td></tr>
+    <tr><td>A new citation format</td><td class="mono">CitationService <em>— no DB, no HTTP, directly unit-testable</em></td></tr>
+    <tr><td>Real email verification</td><td>Both halves: <code>User implements MustVerifyEmail</code> <b>and</b> a real mailer</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-faint)">
+Route-by-route detail and query wiring: <code>notes/wiring.md</code> ·
+System shape in prose: <code>notes/architecture.md</code> ·
+Conversation history: <code>notes/conversation-log.md</code>
+</p>
+
+</div>
+</body>
+</html>
